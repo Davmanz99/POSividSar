@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* Premium Dark Tech Theme Variables */
+        --bg-primary: #050505;
+        --bg-secondary: #0a0a0a;
+        --bg-card: rgba(20, 20, 20, 0.6);
+
+        --text-primary: #ffffff;
+        --text-secondary: #a1a1aa;
+        --text-muted: #52525b;
+
+        /* Neon Accents */
+        --accent-primary: #00f0ff;
+        /* Cyan Neon */
+        --accent-secondary: #7000ff;
+        /* Purple Neon */
+        --accent-success: #00ff9d;
+        --accent-danger: #ff0055;
+        --accent-warning: #ffbe0b;
+
+        /* Tailwind Mappings */
+        --background: 0 0% 2%;
+        --foreground: 0 0% 100%;
+
+        --card: 0 0% 8%;
+        --card-foreground: 0 0% 100%;
+
+        --popover: 0 0% 8%;
+        --popover-foreground: 0 0% 100%;
+
+        --primary: 180 100% 50%;
+        --primary-foreground: 0 0% 0%;
+
+        --secondary: 266 100% 50%;
+        --secondary-foreground: 0 0% 100%;
+
+        --muted: 240 5% 26%;
+        --muted-foreground: 240 5% 65%;
+
+        --accent: 180 100% 50%;
+        --accent-foreground: 0 0% 0%;
+
+        --destructive: 0 100% 50%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 240 6% 10%;
+        --input: 240 6% 10%;
+        --ring: 180 100% 50%;
+
+        --radius: 0.75rem;
+    }
+
+    [data-theme='light'] {
+        /* Ultra High Contrast Light Mode */
+        --bg-primary: #ffffff;
+        --bg-secondary: #e2e8f0;
+        /* Slate-200 - Distinct gray */
+        --bg-card: #ffffff;
+
+        --text-primary: #000000;
+        /* Pure Black */
+        --text-secondary: #0f172a;
+        /* Slate-900 */
+        --text-muted: #334155;
+        /* Slate-700 */
+
+        /* Darker Accents for Visibility */
+        --accent-primary: #0e7490;
+        /* Cyan-700 */
+        --accent-secondary: #6b21a8;
+        /* Purple-800 */
+
+        /* Tailwind Mappings Override */
+        --background: 0 0% 100%;
+        --foreground: 0 0% 0%;
+
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 0%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 0%;
+
+        --primary: 189 94% 40%;
+        /* Darker Cyan */
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 262 83% 50%;
+        --secondary-foreground: 0 0% 100%;
+
+        --muted: 210 40% 90%;
+        --muted-foreground: 215 25% 27%;
+
+        --border: 214 32% 80%;
+        /* Slate-300 - Visible borders */
+        --input: 214 32% 80%;
+
+        /* Sharp Borders */
+        --glass-border: 1px solid rgba(0, 0, 0, 0.2);
+        --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+        @apply bg-background text-foreground font-sans antialiased;
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
+        background-position: center top;
+    }
+}
+
+@layer components {
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        @apply bg-white/10 rounded-full hover:bg-cyan-500 transition-colors;
+    }
+
+    .glass-panel {
+        @apply bg-card rounded-2xl transition-all duration-300 relative overflow-hidden;
+        border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.05));
+        box-shadow: var(--glass-shadow, 0 8px 32px 0 rgba(0, 0, 0, 0.5));
+    }
+
+    .glass-panel::before {
+        content: '';
+        @apply absolute inset-0 rounded-2xl pointer-events-none;
+        padding: 1px;
+        background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+    }
+}
