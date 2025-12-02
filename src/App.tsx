@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/pages/login-page';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { UsersPage } from '@/features/dashboard/users-page';
@@ -13,7 +13,7 @@ import { SalesHistoryPage } from '@/features/sales/sales-history-page';
 
 function App() {
     return (
-        <BrowserRouter>
+        <HashRouter>
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
 
@@ -28,7 +28,7 @@ function App() {
 
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
-        </BrowserRouter>
+        </HashRouter>
     );
 }
 
