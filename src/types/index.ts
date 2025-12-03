@@ -17,6 +17,7 @@ export interface Local {
     isActive: boolean;
     subscriptionStatus: 'ACTIVE' | 'PAST_DUE' | 'CANCELLED';
     lastPaymentDate?: string;
+    cashInRegister?: number; // Current cash in register
 }
 
 export interface Product {

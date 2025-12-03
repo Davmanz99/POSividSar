@@ -5,20 +5,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, ScanBarcode, ArrowRight } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, Banknote, ScanBarcode, ArrowRight, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type CartItem, type Product, type Sale } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { PaymentModal } from '@/components/ui/payment-modal';
 import { printReceipt } from '@/utils/receipt-printer';
 import { CheckCircle, Printer } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 export function POSPage() {
-    const { products, addSale, currentUser, locales } = useStore();
+    const { products, addSale, currentUser, locales, updateLocalCash } = useStore();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'TRANSFER'>('CASH');
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+    const [cashAmount, setCashAmount] = useState('');
 
     // Success Modal State
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -134,6 +137,20 @@ export function POSPage() {
                         <ScanBarcode size={18} className="text-primary animate-pulse" />
                         <span>Escáner Listo</span>
                     </div>
+                    {currentUser?.role === 'ADMIN' && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => setIsCashModalOpen(true)}
+                        >
+                            <DollarSign size={16} className="text-emerald-500" />
+                            <span className="hidden lg:inline">Caja:</span>
+                            <span className="font-mono font-bold text-foreground">
+                                ${locales.find(l => l.id === currentUser.localId)?.cashInRegister?.toLocaleString() || '0'}
+                            </span>
+                        </Button>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-2 pb-2">
@@ -344,6 +361,43 @@ export function POSPage() {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Cash Modal */}
+            <Dialog open={isCashModalOpen} onOpenChange={setIsCashModalOpen}>
+                <DialogContent className="sm:max-w-[425px] bg-card border-white/10">
+                    <DialogHeader>
+                        <DialogTitle>Apertura / Ajuste de Caja</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Monto en Caja</label>
+                            <Input
+                                id="cash"
+                                type="number"
+                                placeholder="0"
+                                value={cashAmount}
+                                onChange={(e) => setCashAmount(e.target.value)}
+                                className="text-lg"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Ingrese el monto total de efectivo disponible en la caja.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCashModalOpen(false)}>Cancelar</Button>
+                        <Button variant="neon" onClick={() => {
+                            if (currentUser?.localId) {
+                                updateLocalCash(currentUser.localId, Number(cashAmount));
+                                setIsCashModalOpen(false);
+                                setCashAmount('');
+                            }
+                        }}>
+                            Guardar Monto
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
