@@ -63,6 +63,9 @@ export function LoginForm() {
                                 placeholder="Usuario"
                                 className="pl-10 h-12 text-base"
                                 {...form.register("username")}
+                                autoCapitalize="none"
+                                autoCorrect="off"
+                                autoComplete="username"
                             />
                         </div>
                         {form.formState.errors.username && (
@@ -93,7 +96,6 @@ export function LoginForm() {
             <CardFooter className="justify-center pb-8">
                 <div className="text-xs text-muted-foreground text-center space-y-1">
                     <p>Acceso Seguro v2.0</p>
-                    <p>Super Admin: <strong className="text-primary">superadmin</strong> / <strong className="text-primary">SuperSecurePassword123!</strong></p>
                 </div>
             </CardFooter>
         </Card >

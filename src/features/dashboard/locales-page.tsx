@@ -42,6 +42,7 @@ export function LocalesPage() {
             name: data.name,
             address: data.address,
             isActive: true,
+            subscriptionStatus: 'ACTIVE'
         };
         addLocal(newLocal);
 

@@ -3,7 +3,7 @@ import { useStore } from '@/store/store';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Calendar, User, ShoppingBag, DollarSign, Printer } from 'lucide-react';
+import { Search, Calendar, User, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { printReceipt } from '@/utils/receipt-printer';

@@ -50,7 +50,7 @@ export function UserFormModal({
 }: UserFormModalProps) {
     const isEditing = !!initialData;
 
-    const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<UserFormData>({
+    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<UserFormData>({
         resolver: zodResolver(userSchema),
         defaultValues: {
             name: '',
@@ -132,10 +132,13 @@ export function UserFormModal({
                         <select
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             {...register("role")}
-                            disabled={currentUserRole === 'ADMIN'} // Admins can only create Sellers (default)
+                            disabled={currentUserRole === 'SELLER' || (currentUserRole === 'ADMIN' && (!initialData || initialData.role !== 'ADMIN'))}
                         >
                             <option value="SELLER">Vendedor</option>
-                            {currentUserRole === 'SUPER_ADMIN' && <option value="ADMIN">Administrador de Local</option>}
+                            {/* Show ADMIN option if Super Admin OR if we are editing an existing Admin (e.g. self-edit) */}
+                            {(currentUserRole === 'SUPER_ADMIN' || (currentUserRole === 'ADMIN' && initialData?.role === 'ADMIN')) && (
+                                <option value="ADMIN">Administrador de Local</option>
+                            )}
                             {currentUserRole === 'SUPER_ADMIN' && <option value="SUPER_ADMIN">Super Admin</option>}
                         </select>
                         {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
@@ -147,7 +150,7 @@ export function UserFormModal({
                             <select
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 {...register("localId")}
-                                disabled={currentUserRole === 'ADMIN'} // Admins cannot change local assignment
+                                disabled={currentUserRole === 'ADMIN' || currentUserRole === 'SELLER'} // Admins and Sellers cannot change local assignment
                             >
                                 <option value="">Seleccionar Local...</option>
                                 {locales.map(local => (

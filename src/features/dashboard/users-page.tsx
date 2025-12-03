@@ -67,7 +67,13 @@ export function UsersPage() {
             setIsLoading(true);
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            updateUser(editingUser.id, data);
+            // Filter out empty password to avoid overwriting with empty string
+            const updates = { ...data };
+            if (!updates.password) {
+                delete updates.password;
+            }
+
+            updateUser(editingUser.id, updates);
 
             setIsLoading(false);
             setIsFormOpen(false);
@@ -195,7 +201,7 @@ export function UsersPage() {
                 locales={locales}
                 currentUserRole={currentUser?.role || 'SELLER'}
                 defaultLocalId={currentUser?.localId}
-                currentUserLocalId={currentUser?.localId}
+
             />
 
             <ConfirmationModal

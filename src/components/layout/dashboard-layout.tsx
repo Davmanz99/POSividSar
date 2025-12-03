@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '@/store/store';
 import { useNavigate, Outlet, useLocation, Navigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, Store, Users, ShoppingCart, Package, Bell, Menu, X, Zap, Search } from 'lucide-react';
+import { LogOut, LayoutDashboard, Store, Users, ShoppingCart, Package, Menu, X, Zap, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,7 +96,10 @@ export const DashboardLayout = () => {
                     <div className="w-9 h-9 rounded bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center font-bold text-white border border-white/10">
                         {currentUser.name.charAt(0)}
                     </div>
-                    <div className="overflow-hidden flex-1">
+                    <div
+                        className="overflow-hidden flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => navigate('/profile')}
+                    >
                         <p className="text-sm font-semibold text-foreground truncate">{currentUser.name}</p>
                         <p className="text-[10px] text-primary truncate uppercase tracking-wider">{currentUser.role.replace('_', ' ')}</p>
                     </div>

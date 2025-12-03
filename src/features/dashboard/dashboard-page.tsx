@@ -138,7 +138,7 @@ export function DashboardPage() {
         { name: 'Finanzas', Ingresos: stats.revenue, Costos: stats.cost, Utilidad: stats.profit }
     ];
 
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
 
     if (!currentUser) return null;
 

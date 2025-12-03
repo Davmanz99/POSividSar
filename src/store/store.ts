@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { type User, type Local, type Product, type Sale, type Notification } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+
+import { db } from '@/lib/firebase';
+import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 interface AppState {
     currentUser: User | null;
@@ -38,6 +40,9 @@ interface AppState {
     // Notification Actions
     markNotificationRead: (id: string) => void;
     clearNotifications: () => void;
+
+    // Firebase Init
+    initializeListeners: () => () => void; // Returns unsubscribe function
 }
 
 const INITIAL_SUPER_ADMIN: User = {
@@ -63,6 +68,40 @@ export const useStore = create<AppState>()(
             failedAttempts: {},
             lockoutUntil: {},
 
+            initializeListeners: () => {
+                const unsubs: (() => void)[] = [];
+
+                // Users Listener
+                unsubs.push(onSnapshot(collection(db, "users"), (snapshot) => {
+                    const users = snapshot.docs.map(d => d.data() as User);
+                    // Ensure Super Admin always exists in local state if DB is empty (first run)
+                    if (users.length === 0) {
+                        set({ users: [INITIAL_SUPER_ADMIN] });
+                        // Optionally write it to DB
+                        setDoc(doc(db, "users", INITIAL_SUPER_ADMIN.id), INITIAL_SUPER_ADMIN);
+                    } else {
+                        set({ users });
+                    }
+                }));
+
+                // Locales Listener
+                unsubs.push(onSnapshot(collection(db, "locales"), (snapshot) => {
+                    set({ locales: snapshot.docs.map(d => d.data() as Local) });
+                }));
+
+                // Products Listener
+                unsubs.push(onSnapshot(collection(db, "products"), (snapshot) => {
+                    set({ products: snapshot.docs.map(d => d.data() as Product) });
+                }));
+
+                // Sales Listener
+                unsubs.push(onSnapshot(collection(db, "sales"), (snapshot) => {
+                    set({ sales: snapshot.docs.map(d => d.data() as Sale) });
+                }));
+
+                return () => unsubs.forEach(u => u());
+            },
+
             login: (username, password) => {
                 const state = get();
                 const now = Date.now();
@@ -73,7 +112,15 @@ export const useStore = create<AppState>()(
                     return { success: false, message: `Cuenta bloqueada. Intente en ${remaining} minutos.` };
                 }
 
-                const user = state.users.find((u) => u.username === username || u.email === username);
+                // Check against local state (synced from Firebase)
+                // If the user just loaded the page, 'users' might be empty initially until the snapshot fires.
+                // However, 'persist' might have old data.
+                // The snapshot listener updates 'users' state.
+
+                const user = state.users.find((u) =>
+                    u.username.toLowerCase() === username.toLowerCase() ||
+                    (u.email && u.email.toLowerCase() === username.toLowerCase())
+                );
 
                 if (user) {
                     // Check Password
@@ -109,84 +156,108 @@ export const useStore = create<AppState>()(
 
             logout: () => set({ currentUser: null }),
 
-            addUser: (user) => set((state) => ({ users: [...state.users, user] })),
-
-            updateUser: (id, updates) =>
-                set((state) => ({
-                    users: state.users.map((u) => (u.id === id ? { ...u, ...updates } : u)),
-                })),
-
-            deleteUser: (id) =>
-                set((state) => ({
-                    users: state.users.filter((u) => u.id !== id),
-                })),
-
-            addProduct: (product) => set((state) => ({ products: [...state.products, product] })),
-
-            updateProduct: (id, updates) =>
-                set((state) => ({
-                    products: state.products.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-                })),
-
-            deleteProduct: (id) =>
-                set((state) => ({
-                    products: state.products.filter((p) => p.id !== id),
-                })),
-
-            addSale: (sale) => {
-                set((state) => {
-                    const newNotifications: Notification[] = [];
-
-                    // Intelligent Stock Update
-                    const updatedProducts = state.products.map(p => {
-                        const soldItem = sale.items.find(item => item.id === p.id);
-                        if (soldItem) {
-                            const newStock = p.stock - soldItem.quantity;
-
-                            // Trigger Low Stock Alert
-                            if (newStock <= p.minStock) {
-                                newNotifications.push({
-                                    id: uuidv4(),
-                                    localId: p.localId,
-                                    type: 'LOW_STOCK',
-                                    title: 'Alerta de Stock Bajo',
-                                    message: `El producto "${p.name}" tiene ${newStock} unidades restantes.`,
-                                    date: new Date().toISOString(),
-                                    read: false,
-                                    productId: p.id
-                                });
-                            }
-                            return { ...p, stock: newStock };
-                        }
-                        return p;
-                    });
-
-                    return {
-                        sales: [...state.sales, sale],
-                        products: updatedProducts,
-                        notifications: [...newNotifications, ...state.notifications] // Add new alerts to top
-                    };
-                });
+            addUser: async (user) => {
+                try {
+                    await setDoc(doc(db, "users", user.id), user);
+                } catch (e) {
+                    console.error("Error adding user:", e);
+                }
             },
 
-            addLocal: (local) => set((state) => ({ locales: [...state.locales, local] })),
+            updateUser: async (id, updates) => {
+                try {
+                    await updateDoc(doc(db, "users", id), updates);
+                } catch (e) {
+                    console.error("Error updating user:", e);
+                }
+            },
 
-            updateLocal: (id, updates) =>
-                set((state) => ({
-                    locales: state.locales.map((l) => (l.id === id ? { ...l, ...updates } : l)),
-                })),
+            deleteUser: async (id) => {
+                try {
+                    await deleteDoc(doc(db, "users", id));
+                } catch (e) {
+                    console.error("Error deleting user:", e);
+                }
+            },
 
-            deleteLocal: (id) =>
-                set((state) => ({
-                    locales: state.locales.filter((l) => l.id !== id),
-                })),
+            addProduct: async (product) => {
+                try {
+                    await setDoc(doc(db, "products", product.id), product);
+                } catch (e) {
+                    console.error("Error adding product:", e);
+                }
+            },
 
-            toggleLocalStatus: (id) =>
-                set((state) => ({
-                    locales: state.locales.map((l) =>
-                        l.id === id ? { ...l, isActive: !l.isActive } : l
-                    ),
-                })),
+            updateProduct: async (id, updates) => {
+                try {
+                    await updateDoc(doc(db, "products", id), updates);
+                } catch (e) {
+                    console.error("Error updating product:", e);
+                }
+            },
+
+            deleteProduct: async (id) => {
+                try {
+                    await deleteDoc(doc(db, "products", id));
+                } catch (e) {
+                    console.error("Error deleting product:", e);
+                }
+            },
+
+            addSale: async (sale) => {
+                try {
+                    // 1. Save Sale
+                    await setDoc(doc(db, "sales", sale.id), sale);
+
+                    // 2. Update Stock for each item
+                    const state = get();
+                    for (const item of sale.items) {
+                        const product = state.products.find(p => p.id === item.id);
+                        if (product) {
+                            const newStock = product.stock - item.quantity;
+                            await updateDoc(doc(db, "products", product.id), { stock: newStock });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error adding sale:", e);
+                }
+            },
+
+            addLocal: async (local) => {
+                try {
+                    await setDoc(doc(db, "locales", local.id), local);
+                } catch (e) {
+                    console.error("Error adding local:", e);
+                }
+            },
+
+            updateLocal: async (id, updates) => {
+                try {
+                    await updateDoc(doc(db, "locales", id), updates);
+                } catch (e) {
+                    console.error("Error updating local:", e);
+                }
+            },
+
+            deleteLocal: async (id) => {
+                try {
+                    await deleteDoc(doc(db, "locales", id));
+                } catch (e) {
+                    console.error("Error deleting local:", e);
+                }
+            },
+
+            toggleLocalStatus: async (id) => {
+                const state = get();
+                const local = state.locales.find(l => l.id === id);
+                if (local) {
+                    try {
+                        await updateDoc(doc(db, "locales", id), { isActive: !local.isActive });
+                    } catch (e) {
+                        console.error("Error toggling local:", e);
+                    }
+                }
+            },
 
             markNotificationRead: (id) =>
                 set((state) => ({

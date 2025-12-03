@@ -322,7 +322,7 @@ export function POSPage() {
                                     className="flex-1 gap-2"
                                     onClick={() => {
                                         const local = locales.find(l => l.id === lastSale.localId);
-                                        printReceipt({ sale: lastSale, local, seller: currentUser });
+                                        printReceipt({ sale: lastSale, local, seller: currentUser || undefined });
                                     }}
                                 >
                                     <Printer size={18} />

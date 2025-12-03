@@ -21,7 +21,7 @@ const localSchema = z.object({
     adminName: z.union([z.string(), z.literal('')]).optional(),
     adminEmail: z.union([z.string().email("Correo inválido"), z.literal('')]).optional(),
     adminPassword: z.union([z.string().min(6, "La contraseña debe tener al menos 6 caracteres"), z.literal('')]).optional(),
-}).refine((data) => {
+}).refine((_data) => {
     // If we are creating (we don't have an ID check here, but we can infer or pass a prop),
     // but for now, let's just say if adminName is provided, the others must be too.
     // Actually, better to handle this validation logic based on the 'isEditing' prop passed to the component?
