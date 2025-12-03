@@ -172,9 +172,36 @@ export function LocalesPage() {
                                             </Badge>
                                         </div>
                                         <h3 className="text-xl font-bold text-foreground mb-2">{local.name}</h3>
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                                             <MapPin size={14} />
                                             <span>{local.address}</span>
+                                        </div>
+
+                                        <div className="space-y-2 mb-4">
+                                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Equipo:</p>
+                                            {useStore.getState().users.filter(u => u.localId === local.id).length > 0 ? (
+                                                <div className="flex flex-col gap-1">
+                                                    {useStore.getState().users
+                                                        .filter(u => u.localId === local.id)
+                                                        .slice(0, 3) // Show max 3
+                                                        .map(u => (
+                                                            <div key={u.id} className="text-xs flex items-center gap-2 text-foreground/80">
+                                                                <div className={`w-1.5 h-1.5 rounded-full ${u.role === 'ADMIN' ? 'bg-primary' : 'bg-blue-400'}`} />
+                                                                <span className="truncate max-w-[180px]">{u.email || u.username}</span>
+                                                                <span className="text-[10px] text-muted-foreground border border-white/10 px-1 rounded">
+                                                                    {u.role === 'ADMIN' ? 'Admin' : 'Vendedor'}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    {useStore.getState().users.filter(u => u.localId === local.id).length > 3 && (
+                                                        <p className="text-[10px] text-muted-foreground pl-3.5">
+                                                            + {useStore.getState().users.filter(u => u.localId === local.id).length - 3} más...
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground italic pl-2">Sin personal asignado</p>
+                                            )}
                                         </div>
 
                                         <div className="flex gap-2 border-t border-white/10 pt-4">
