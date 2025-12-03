@@ -18,6 +18,7 @@ export function LoginForm() {
     const navigate = useNavigate()
     const login = useStore((state) => state.login)
     const [error, setError] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -27,14 +28,21 @@ export function LoginForm() {
         },
     })
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
         setError("")
-        const { success, message } = login(values.username, values.password)
+        setIsLoading(true)
+        try {
+            const { success, message } = await login(values.username, values.password)
 
-        if (success) {
-            navigate("/")
-        } else {
-            setError(message || "Credenciales inválidas")
+            if (success) {
+                navigate("/")
+            } else {
+                setError(message || "Credenciales inválidas")
+            }
+        } catch (e) {
+            setError("Error al iniciar sesión")
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -88,8 +96,8 @@ export function LoginForm() {
                         )}
                     </div>
 
-                    <Button type="submit" variant="neon" size="lg" className="w-full mt-4 text-base font-bold tracking-widest">
-                        INICIAR SESIÓN
+                    <Button type="submit" variant="neon" size="lg" className="w-full mt-4 text-base font-bold tracking-widest" disabled={isLoading}>
+                        {isLoading ? "VERIFICANDO..." : "INICIAR SESIÓN"}
                     </Button>
                 </form>
             </CardContent>

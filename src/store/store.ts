@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { type User, type Local, type Product, type Sale, type Notification } from '../types';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 
 interface AppState {
     currentUser: User | null;
@@ -17,7 +17,7 @@ interface AppState {
     lockoutUntil: Record<string, number>;
 
     // Auth Actions
-    login: (username: string, password?: string) => { success: boolean; message?: string };
+    login: (username: string, password?: string) => Promise<{ success: boolean; message?: string }>;
     logout: () => void;
     addUser: (user: User) => void;
     updateUser: (id: string, updates: Partial<User>) => void;
@@ -102,7 +102,7 @@ export const useStore = create<AppState>()(
                 return () => unsubs.forEach(u => u());
             },
 
-            login: (username, password) => {
+            login: async (username, password) => {
                 const state = get();
                 const now = Date.now();
 
@@ -112,15 +112,43 @@ export const useStore = create<AppState>()(
                     return { success: false, message: `Cuenta bloqueada. Intente en ${remaining} minutos.` };
                 }
 
-                // Check against local state (synced from Firebase)
-                // If the user just loaded the page, 'users' might be empty initially until the snapshot fires.
-                // However, 'persist' might have old data.
-                // The snapshot listener updates 'users' state.
-
-                const user = state.users.find((u) =>
+                // 1. Try to find in local state first (Fast)
+                let user = state.users.find((u) =>
                     u.username.toLowerCase() === username.toLowerCase() ||
                     (u.email && u.email.toLowerCase() === username.toLowerCase())
                 );
+
+                // 2. If not found locally, try to find in Firestore directly (Robust)
+                // This handles cases where sync hasn't finished yet or is lagging
+                if (!user) {
+                    try {
+                        const usersRef = collection(db, "users");
+                        // We can't easily query by OR in Firestore without multiple queries or an index
+                        // So we try username first, then email
+
+                        // Query by username
+                        const qUsername = query(usersRef, where("username", "==", username)); // Case sensitive in Firestore usually, but let's try
+                        const snapshotUsername = await getDocs(qUsername);
+
+                        if (!snapshotUsername.empty) {
+                            user = snapshotUsername.docs[0].data() as User;
+                        } else {
+                            // Query by email
+                            const qEmail = query(usersRef, where("email", "==", username));
+                            const snapshotEmail = await getDocs(qEmail);
+                            if (!snapshotEmail.empty) {
+                                user = snapshotEmail.docs[0].data() as User;
+                            }
+                        }
+
+                        // Note: This simple query is case-sensitive. 
+                        // For true case-insensitive search in Firestore, we'd need a normalized 'username_lower' field.
+                        // But this is better than nothing.
+                    } catch (e) {
+                        console.error("Error querying user during login:", e);
+                        return { success: false, message: "Error de conexión al verificar usuario." };
+                    }
+                }
 
                 if (user) {
                     // Check Password
@@ -129,7 +157,7 @@ export const useStore = create<AppState>()(
 
                         if (newAttempts >= MAX_ATTEMPTS) {
                             set((prev) => ({
-                                failedAttempts: { ...prev.failedAttempts, [username]: 0 }, // Reset attempts after lockout? Or keep? Usually reset after lockout expires.
+                                failedAttempts: { ...prev.failedAttempts, [username]: 0 },
                                 lockoutUntil: { ...prev.lockoutUntil, [username]: now + LOCKOUT_DURATION }
                             }));
                             return { success: false, message: `Demasiados intentos. Cuenta bloqueada por 5 min.` };
