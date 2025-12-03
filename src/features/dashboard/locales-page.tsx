@@ -64,11 +64,36 @@ export function LocalesPage() {
         setIsFormOpen(false);
     };
 
-    const handleUpdate = async (data: { name: string; address: string }) => {
+    const handleUpdate = async (data: any) => {
         if (editingLocal) {
             setIsLoading(true);
             await new Promise(resolve => setTimeout(resolve, 1000));
-            updateLocal(editingLocal.id, data);
+
+            // 1. Update Local
+            updateLocal(editingLocal.id, {
+                name: data.name,
+                address: data.address
+            });
+
+            // 2. Update Admin (if exists)
+            // Find the admin
+            const { users, updateUser } = useStore.getState();
+            const admin = users.find(u => u.localId === editingLocal.id && u.role === 'ADMIN');
+
+            if (admin) {
+                const updates: any = {};
+                if (data.adminName) updates.name = data.adminName;
+                if (data.adminEmail) {
+                    updates.email = data.adminEmail;
+                    updates.username = data.adminEmail; // Assuming username is email for admins
+                }
+                if (data.adminPassword) updates.password = data.adminPassword;
+
+                if (Object.keys(updates).length > 0) {
+                    updateUser(admin.id, updates);
+                }
+            }
+
             setIsLoading(false);
             setIsFormOpen(false);
         }
@@ -146,7 +171,7 @@ export function LocalesPage() {
                                                 {local.isActive ? 'ACTIVO' : 'INACTIVO'}
                                             </Badge>
                                         </div>
-                                        <h3 className="text-xl font-bold text-white mb-2">{local.name}</h3>
+                                        <h3 className="text-xl font-bold text-foreground mb-2">{local.name}</h3>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
                                             <MapPin size={14} />
                                             <span>{local.address}</span>

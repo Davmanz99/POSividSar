@@ -13,6 +13,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import { type Local } from "@/types"
+import { useStore } from "@/store/store"
 
 const localSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -61,15 +62,20 @@ export function LocalFormModal({
         }
     })
 
+    const { users } = useStore(); // Need users to find the admin
+
     useEffect(() => {
         if (isOpen) {
             if (initialData) {
+                // Find the admin for this local
+                const admin = users.find(u => u.localId === initialData.id && u.role === 'ADMIN');
+
                 reset({
                     name: initialData.name,
                     address: initialData.address,
-                    adminName: '',
-                    adminEmail: '',
-                    adminPassword: ''
+                    adminName: admin?.name || '',
+                    adminEmail: admin?.email || '',
+                    adminPassword: '' // Don't show password
                 })
             } else {
                 reset({
@@ -81,7 +87,7 @@ export function LocalFormModal({
                 })
             }
         }
-    }, [isOpen, initialData, reset])
+    }, [isOpen, initialData, reset, users])
 
     const handleFormSubmit = (data: LocalFormData) => {
         console.log("Form submitted with data:", data);
@@ -127,23 +133,25 @@ export function LocalFormModal({
                         </div>
                     </div>
 
-                    {!isEditing && (
-                        <div className="space-y-2 pt-4 border-t border-white/10">
-                            <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Administrador del Local</h3>
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium">Nombre Admin</label>
-                                <Input {...register("adminName")} placeholder="Nombre del encargado" required={!isEditing} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium">Correo Electrónico</label>
-                                <Input {...register("adminEmail")} type="email" placeholder="admin@local.com" required={!isEditing} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium">Contraseña</label>
-                                <Input {...register("adminPassword")} type="password" placeholder="******" required={!isEditing} />
-                            </div>
+                    <div className="space-y-2 pt-4 border-t border-white/10">
+                        <h3 className="text-sm font-bold text-primary uppercase tracking-wider">
+                            {isEditing ? "Actualizar Administrador (Opcional)" : "Administrador del Local"}
+                        </h3>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium">Nombre Admin</label>
+                            <Input {...register("adminName")} placeholder="Nombre del encargado" required={!isEditing} />
                         </div>
-                    )}
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium">Correo Electrónico</label>
+                            <Input {...register("adminEmail")} type="email" placeholder="admin@local.com" required={!isEditing} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium">
+                                {isEditing ? "Nueva Contraseña (Dejar en blanco para mantener)" : "Contraseña"}
+                            </label>
+                            <Input {...register("adminPassword")} type="password" placeholder="******" required={!isEditing} />
+                        </div>
+                    </div>
 
                     <DialogFooter className="pt-4">
                         <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>Cancelar</Button>
