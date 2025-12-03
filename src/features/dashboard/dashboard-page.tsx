@@ -230,24 +230,26 @@ export function DashboardPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="glass-panel border-l-4 border-l-purple-500 border-border bg-card">
-                        <CardContent className="p-6">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Utilidad Neta</p>
-                                    <h3 className="text-2xl font-bold text-foreground mt-2">
-                                        ${stats.profit.toLocaleString()}
-                                    </h3>
-                                    <p className="text-xs text-emerald-500 mt-1">
-                                        {stats.margin.toFixed(1)}% Margen
-                                    </p>
+                    {currentUser.role === 'ADMIN' && (
+                        <Card className="glass-panel border-l-4 border-l-purple-500 border-border bg-card">
+                            <CardContent className="p-6">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Utilidad Neta</p>
+                                        <h3 className="text-2xl font-bold text-foreground mt-2">
+                                            ${stats.profit.toLocaleString()}
+                                        </h3>
+                                        <p className="text-xs text-emerald-500 mt-1">
+                                            {stats.margin.toFixed(1)}% Margen
+                                        </p>
+                                    </div>
+                                    <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500">
+                                        <PieChart size={24} />
+                                    </div>
                                 </div>
-                                <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500">
-                                    <PieChart size={24} />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     <Card className="glass-panel border-l-4 border-l-green-500 border-border bg-card">
                         <CardContent className="p-6">
