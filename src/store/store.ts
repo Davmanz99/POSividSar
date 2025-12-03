@@ -119,34 +119,40 @@ export const useStore = create<AppState>()(
                 );
 
                 // 2. If not found locally, try to find in Firestore directly (Robust)
-                // This handles cases where sync hasn't finished yet or is lagging
                 if (!user) {
                     try {
                         const usersRef = collection(db, "users");
-                        // We can't easily query by OR in Firestore without multiple queries or an index
-                        // So we try username first, then email
 
-                        // Query by username
-                        const qUsername = query(usersRef, where("username", "==", username)); // Case sensitive in Firestore usually, but let's try
-                        const snapshotUsername = await getDocs(qUsername);
+                        // Strategy A: Exact Match (Legacy & Fast)
+                        let q = query(usersRef, where("username", "==", username));
+                        let snapshot = await getDocs(q);
 
-                        if (!snapshotUsername.empty) {
-                            user = snapshotUsername.docs[0].data() as User;
-                        } else {
-                            // Query by email
-                            const qEmail = query(usersRef, where("email", "==", username));
-                            const snapshotEmail = await getDocs(qEmail);
-                            if (!snapshotEmail.empty) {
-                                user = snapshotEmail.docs[0].data() as User;
+                        if (!snapshot.empty) {
+                            user = snapshot.docs[0].data() as User;
+                        }
+
+                        // Strategy B: Case Insensitive (using username_lower field)
+                        if (!user) {
+                            q = query(usersRef, where("username_lower", "==", username.toLowerCase()));
+                            snapshot = await getDocs(q);
+                            if (!snapshot.empty) {
+                                user = snapshot.docs[0].data() as User;
                             }
                         }
 
-                        // Note: This simple query is case-sensitive. 
-                        // For true case-insensitive search in Firestore, we'd need a normalized 'username_lower' field.
-                        // But this is better than nothing.
+                        // Strategy C: Email
+                        if (!user) {
+                            q = query(usersRef, where("email", "==", username)); // Try exact email
+                            snapshot = await getDocs(q);
+                            if (!snapshot.empty) {
+                                user = snapshot.docs[0].data() as User;
+                            }
+                        }
+
                     } catch (e) {
                         console.error("Error querying user during login:", e);
-                        return { success: false, message: "Error de conexión al verificar usuario." };
+                        // If this fails, it's likely a network or config error (missing Env Vars)
+                        return { success: false, message: "Error de conexión. Verifique configuración." };
                     }
                 }
 
@@ -186,7 +192,12 @@ export const useStore = create<AppState>()(
 
             addUser: async (user) => {
                 try {
-                    await setDoc(doc(db, "users", user.id), user);
+                    const userWithIndex = {
+                        ...user,
+                        username_lower: user.username.toLowerCase(),
+                        email_lower: user.email?.toLowerCase() || ''
+                    };
+                    await setDoc(doc(db, "users", user.id), userWithIndex);
                 } catch (e) {
                     console.error("Error adding user:", e);
                 }
@@ -194,7 +205,14 @@ export const useStore = create<AppState>()(
 
             updateUser: async (id, updates) => {
                 try {
-                    await updateDoc(doc(db, "users", id), updates);
+                    const updatesWithIndex = { ...updates };
+                    if (updates.username) {
+                        (updatesWithIndex as any).username_lower = updates.username.toLowerCase();
+                    }
+                    if (updates.email) {
+                        (updatesWithIndex as any).email_lower = updates.email.toLowerCase();
+                    }
+                    await updateDoc(doc(db, "users", id), updatesWithIndex);
                 } catch (e) {
                     console.error("Error updating user:", e);
                 }
