@@ -45,6 +45,10 @@ export interface Sale {
     total: number;
     date: string;
     paymentMethod: 'CASH' | 'CARD' | 'TRANSFER';
+    discount?: number;
+    discountType?: 'FIXED' | 'PERCENTAGE';
+    finalTotal?: number;
+    amountTendered?: number;
 }
 
 export interface Notification {

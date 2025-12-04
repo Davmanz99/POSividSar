@@ -94,15 +94,27 @@ export function POSPage() {
         setIsPaymentModalOpen(true);
     };
 
-    const handleConfirmPayment = (amountTendered?: number) => {
+    const handleConfirmPayment = (amountTendered?: number, discount?: { value: number, type: 'FIXED' | 'PERCENTAGE' }) => {
         if (!currentUser) return;
 
-        const sale = {
+        let finalTotal = total;
+        if (discount) {
+            if (discount.type === 'FIXED') {
+                finalTotal = Math.max(0, total - discount.value);
+            } else {
+                finalTotal = Math.max(0, total - (total * (discount.value / 100)));
+            }
+        }
+
+        const sale: Sale = {
             id: uuidv4(),
             localId: currentUser.localId || 'main',
             sellerId: currentUser.id,
             items: cart,
-            total,
+            total, // Original total
+            finalTotal, // Discounted total
+            discount: discount?.value,
+            discountType: discount?.type,
             date: new Date().toISOString(),
             paymentMethod,
             amountTendered // Optional: store this if needed in the future
@@ -321,10 +333,20 @@ export function POSPage() {
 
                             <div className="bg-muted/30 p-4 rounded-lg mb-6">
                                 <div className="flex justify-between text-sm mb-2">
-                                    <span className="text-muted-foreground">Total Pagado:</span>
+                                    <span className="text-muted-foreground">Subtotal:</span>
                                     <span className="font-bold text-foreground">${lastSale.total.toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
+                                {lastSale.discount && (
+                                    <div className="flex justify-between text-sm mb-2 text-emerald-500">
+                                        <span>Descuento {lastSale.discountType === 'PERCENTAGE' ? `(${lastSale.discount}%)` : ''}:</span>
+                                        <span>-${(lastSale.total - (lastSale.finalTotal || lastSale.total)).toLocaleString()}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-base mb-2 pt-2 border-t border-border">
+                                    <span className="font-bold text-foreground">Total Final:</span>
+                                    <span className="font-bold text-foreground text-xl">${(lastSale.finalTotal || lastSale.total).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between text-sm mt-2">
                                     <span className="text-muted-foreground">Método:</span>
                                     <span className="font-bold text-foreground">
                                         {lastSale.paymentMethod === 'CASH' ? 'Efectivo' :

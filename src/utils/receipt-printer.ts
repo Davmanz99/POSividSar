@@ -114,8 +114,18 @@ export const printReceipt = ({ sale, local, seller }: PrintReceiptProps) => {
 
                 <div class="total-section">
                     <div class="info-row">
-                        <span>TOTAL:</span>
+                        <span>SUBTOTAL:</span>
                         <span>$${sale.total.toLocaleString()}</span>
+                    </div>
+                    ${sale.discount ? `
+                    <div class="info-row" style="color: #000;">
+                        <span>DESCUENTO ${sale.discountType === 'PERCENTAGE' ? `(${sale.discount}%)` : ''}:</span>
+                        <span>-$${(sale.total - (sale.finalTotal || sale.total)).toLocaleString()}</span>
+                    </div>
+                    ` : ''}
+                    <div class="info-row" style="font-size: 16px; margin-top: 5px;">
+                        <span>TOTAL:</span>
+                        <span>$${(sale.finalTotal || sale.total).toLocaleString()}</span>
                     </div>
                 </div>
                 

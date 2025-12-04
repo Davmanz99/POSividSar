@@ -9,12 +9,13 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Banknote, CreditCard, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Banknote, CreditCard, ArrowRight, CheckCircle2, Percent, DollarSign } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 interface PaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (amountTendered?: number) => void;
+    onConfirm: (amountTendered?: number, discount?: { value: number, type: 'FIXED' | 'PERCENTAGE' }) => void;
     totalAmount: number;
     paymentMethod: 'CASH' | 'CARD' | 'TRANSFER';
 }
@@ -29,45 +30,71 @@ export function PaymentModal({
     const [amountTendered, setAmountTendered] = useState<string>('');
     const [change, setChange] = useState<number>(0);
 
+    // Discount State
+    const [discountValue, setDiscountValue] = useState<string>('');
+    const [discountType, setDiscountType] = useState<'FIXED' | 'PERCENTAGE'>('FIXED');
+    const [finalTotal, setFinalTotal] = useState<number>(totalAmount);
+
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
             setAmountTendered('');
             setChange(0);
+            setDiscountValue('');
+            setDiscountType('FIXED');
+            setFinalTotal(totalAmount);
         }
-    }, [isOpen]);
+    }, [isOpen, totalAmount]);
 
-    // Calculate change
+    // Calculate Final Total based on Discount
+    useEffect(() => {
+        const discount = parseFloat(discountValue) || 0;
+        let calculatedTotal = totalAmount;
+
+        if (discount > 0) {
+            if (discountType === 'FIXED') {
+                calculatedTotal = Math.max(0, totalAmount - discount);
+            } else {
+                calculatedTotal = Math.max(0, totalAmount - (totalAmount * (discount / 100)));
+            }
+        }
+        setFinalTotal(calculatedTotal);
+    }, [discountValue, discountType, totalAmount]);
+
+    // Calculate change based on Final Total
     useEffect(() => {
         const tendered = parseFloat(amountTendered);
-        if (!isNaN(tendered) && tendered >= totalAmount) {
-            setChange(tendered - totalAmount);
+        if (!isNaN(tendered) && tendered >= finalTotal) {
+            setChange(tendered - finalTotal);
         } else {
             setChange(0);
         }
-    }, [amountTendered, totalAmount]);
+    }, [amountTendered, finalTotal]);
 
     const handleConfirm = () => {
+        const discount = parseFloat(discountValue) || 0;
+        const discountData = discount > 0 ? { value: discount, type: discountType } : undefined;
+
         if (paymentMethod === 'CASH') {
             const tendered = parseFloat(amountTendered);
-            if (isNaN(tendered) || tendered < totalAmount) return;
-            onConfirm(tendered);
+            if (isNaN(tendered) || tendered < finalTotal) return;
+            onConfirm(tendered, discountData);
         } else {
-            onConfirm();
+            onConfirm(undefined, discountData);
         }
     };
 
     const isConfirmDisabled = () => {
         if (paymentMethod === 'CASH') {
             const tendered = parseFloat(amountTendered);
-            return isNaN(tendered) || tendered < totalAmount;
+            return isNaN(tendered) || tendered < finalTotal;
         }
         return false;
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[425px] bg-card border-border">
+            <DialogContent className="sm:max-w-[425px] bg-card border-border max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-foreground">
                         {paymentMethod === 'CASH' && <Banknote className="text-emerald-500" />}
@@ -82,12 +109,57 @@ export function PaymentModal({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="py-6 space-y-6">
+                <div className="py-4 space-y-6">
+                    {/* Discount Section */}
+                    <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border">
+                        <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Percent size={14} /> Aplicar Descuento (Opcional)
+                        </label>
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={discountValue}
+                                    onChange={(e) => setDiscountValue(e.target.value)}
+                                    className="bg-background"
+                                />
+                            </div>
+                            <div className="flex bg-muted rounded-md p-1 gap-1">
+                                <Button
+                                    type="button"
+                                    variant={discountType === 'FIXED' ? 'secondary' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setDiscountType('FIXED')}
+                                    className="h-8 px-2"
+                                >
+                                    <DollarSign size={14} />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant={discountType === 'PERCENTAGE' ? 'secondary' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setDiscountType('PERCENTAGE')}
+                                    className="h-8 px-2"
+                                >
+                                    <Percent size={14} />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Total Display */}
                     <div className="text-center space-y-1">
                         <p className="text-sm text-muted-foreground uppercase tracking-wider">Total a Pagar</p>
-                        <div className="text-4xl font-bold text-foreground font-mono">
-                            ${totalAmount.toLocaleString()}
+                        <div className="flex flex-col items-center">
+                            {finalTotal !== totalAmount && (
+                                <span className="text-lg text-muted-foreground line-through decoration-destructive">
+                                    ${totalAmount.toLocaleString()}
+                                </span>
+                            )}
+                            <div className="text-4xl font-bold text-foreground font-mono">
+                                ${finalTotal.toLocaleString()}
+                            </div>
                         </div>
                     </div>
 
