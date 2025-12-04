@@ -41,6 +41,9 @@ export function TaskList({ tasks, currentUser, onToggleStatus, onDelete, usersMa
                             </div>
                             <div className="text-xs text-muted-foreground">
                                 Vence: {task.dueDate ? format(new Date(task.dueDate), "d 'de' MMMM, HH:mm", { locale: es }) : 'Sin fecha'}
+                                {task.isRecurring && (
+                                    <span className="ml-2 text-blue-400 font-semibold">(↻ Diaria)</span>
+                                )}
                             </div>
                         </CardHeader>
                         <CardContent>

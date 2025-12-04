@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { Task } from "@/types"
 
 export function TasksPage() {
-    const { tasks, users, currentUser, addTask, updateTask, deleteTask } = useStore()
+    const { tasks, users, currentUser, addTask, updateTask, deleteTask, completeTask } = useStore()
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
     const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN'
@@ -60,7 +60,9 @@ export function TasksPage() {
             description: data.description,
             dueDate: data.dueDate,
             status: 'PENDING',
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            isRecurring: data.isRecurring,
+            frequency: data.isRecurring ? 'DAILY' : undefined
         }
 
         addTask(newTask)
@@ -68,11 +70,15 @@ export function TasksPage() {
     }
 
     const handleToggleStatus = (taskId: string, currentStatus: 'PENDING' | 'COMPLETED') => {
-        const newStatus = currentStatus === 'PENDING' ? 'COMPLETED' : 'PENDING'
-        updateTask(taskId, {
-            status: newStatus,
-            completedAt: newStatus === 'COMPLETED' ? new Date().toISOString() : undefined
-        })
+        if (currentStatus === 'PENDING') {
+            completeTask(taskId);
+        } else {
+            // Revert to pending (only for non-recurring or manual fix)
+            updateTask(taskId, {
+                status: 'PENDING',
+                completedAt: undefined
+            })
+        }
     }
 
     const handleDeleteTask = (taskId: string) => {

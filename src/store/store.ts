@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { type User, type Local, type Product, type Sale, type Notification, type Task } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
 import { db } from '@/lib/firebase';
 import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, where, getDocs, increment } from 'firebase/firestore';
@@ -48,6 +49,7 @@ interface AppState {
     addTask: (task: Task) => void;
     updateTask: (id: string, updates: Partial<Task>) => void;
     deleteTask: (id: string) => void;
+    completeTask: (taskId: string) => Promise<void>;
 
     // Firebase Init
     initializeListeners: () => () => void; // Returns unsubscribe function
@@ -372,6 +374,47 @@ export const useStore = create<AppState>()(
                     await deleteDoc(doc(db, "tasks", id));
                 } catch (e) {
                     console.error("Error deleting task:", e);
+                }
+            },
+
+            completeTask: async (taskId) => {
+                const state = get();
+                const task = state.tasks.find(t => t.id === taskId);
+                if (!task) return;
+
+                const now = new Date().toISOString();
+
+                try {
+                    // 1. Mark current task as completed
+                    await updateDoc(doc(db, "tasks", taskId), {
+                        status: 'COMPLETED',
+                        completedAt: now
+                    });
+
+                    // 2. If recurring, create the next one
+                    if (task.isRecurring && task.frequency === 'DAILY') {
+                        // Calculate next due date (tomorrow same time)
+                        let nextDueDate = '';
+                        if (task.dueDate) {
+                            const date = new Date(task.dueDate);
+                            date.setDate(date.getDate() + 1);
+                            nextDueDate = date.toISOString(); // Keep ISO format
+                            // Note: If using datetime-local input, the format might be slightly different in UI but ISO is safe for storage
+                        }
+
+                        const nextTask: Task = {
+                            ...task,
+                            id: uuidv4(),
+                            status: 'PENDING',
+                            createdAt: now,
+                            completedAt: undefined,
+                            dueDate: nextDueDate
+                        };
+
+                        await setDoc(doc(db, "tasks", nextTask.id), nextTask);
+                    }
+                } catch (e) {
+                    console.error("Error completing task:", e);
                 }
             },
         }),

@@ -19,6 +19,7 @@ const taskSchema = z.object({
     description: z.string().optional(),
     dueDate: z.string().min(1, "La fecha es requerida"),
     assignedToId: z.string().min(1, "Debes asignar un vendedor"),
+    isRecurring: z.boolean().optional(),
 })
 
 export type TaskFormData = z.infer<typeof taskSchema>
@@ -44,7 +45,8 @@ export function CreateTaskDialog({
             title: '',
             description: '',
             dueDate: '',
-            assignedToId: ''
+            assignedToId: '',
+            isRecurring: false
         }
     })
 
@@ -54,7 +56,8 @@ export function CreateTaskDialog({
                 title: '',
                 description: '',
                 dueDate: '',
-                assignedToId: ''
+                assignedToId: '',
+                isRecurring: false
             })
         }
     }, [isOpen, reset])
@@ -102,6 +105,18 @@ export function CreateTaskDialog({
                             ))}
                         </select>
                         {errors.assignedToId && <p className="text-xs text-destructive">{errors.assignedToId.message}</p>}
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            id="isRecurring"
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            {...register("isRecurring")}
+                        />
+                        <label htmlFor="isRecurring" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Repetir diariamente (Tarea recurrente)
+                        </label>
                     </div>
 
                     <DialogFooter className="pt-4">

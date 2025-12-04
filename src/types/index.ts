@@ -74,4 +74,6 @@ export interface Task {
     status: 'PENDING' | 'COMPLETED';
     completedAt?: string;
     createdAt: string;
+    isRecurring?: boolean;
+    frequency?: 'DAILY';
 }
