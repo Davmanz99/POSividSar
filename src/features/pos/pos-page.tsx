@@ -139,18 +139,17 @@ export function POSPage() {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-6">
-            {/* Product Grid Section */}
-            <div className="flex-1 flex flex-col gap-4 min-w-0">
+        <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-4 lg:gap-6">
+            {/* Product Grid Section (Top Half on Mobile, Left on Desktop) */}
+            <div className="flex-1 flex flex-col gap-4 min-w-0 h-[50vh] lg:h-auto border-b lg:border-b-0 lg:border-r border-border pb-4 lg:pb-0">
                 <div className="flex items-center gap-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                         <Input
-                            placeholder="Buscar productos o escanear..."
-                            className="pl-10 h-12 text-lg"
+                            placeholder="Buscar productos..."
+                            className="pl-10 h-10 lg:h-12 text-base lg:text-lg"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            autoFocus
                         />
                     </div>
                     <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-card border border-border text-muted-foreground text-sm">
@@ -173,7 +172,7 @@ export function POSPage() {
                     )}
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-2 pb-2 h-[calc(100vh-14rem)] lg:h-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 overflow-y-auto pr-2 pb-2 flex-1">
                     {filteredProducts.map(product => (
                         <motion.div
                             key={product.id}
@@ -182,7 +181,7 @@ export function POSPage() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.95 }}
                             className={`
-                cursor-pointer group relative overflow-hidden rounded-xl border p-4 transition-all touch-manipulation
+                cursor-pointer group relative overflow-hidden rounded-xl border p-3 lg:p-4 transition-all touch-manipulation
                 ${product.stock > 0
                                     ? 'bg-card border-border hover:border-primary/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.15)] active:bg-primary/10'
                                     : 'bg-destructive/5 border-destructive/20 opacity-60 cursor-not-allowed'}
@@ -191,11 +190,11 @@ export function POSPage() {
                             <div className="flex justify-between items-start mb-2 pointer-events-none">
                                 <Badge variant="outline" className="bg-muted/40 text-[10px]">{product.category}</Badge>
                                 <span className={`text-xs font-bold ${product.stock <= product.minStock ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                    {product.stock} left
+                                    {product.stock}
                                 </span>
                             </div>
-                            <h3 className="font-bold text-foreground mb-1 truncate pointer-events-none">{product.name}</h3>
-                            <p className="text-lg text-primary font-mono pointer-events-none">${product.price.toFixed(2)}</p>
+                            <h3 className="font-bold text-foreground mb-1 truncate text-sm lg:text-base pointer-events-none">{product.name}</h3>
+                            <p className="text-base lg:text-lg text-primary font-mono pointer-events-none">${product.price.toFixed(0)}</p>
 
                             {/* Tech overlay effect */}
                             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -204,16 +203,19 @@ export function POSPage() {
                 </div>
             </div>
 
-            {/* Cart Section */}
-            <Card className="w-full lg:w-[400px] flex flex-col glass-panel border-border h-full">
-                <div className="p-4 border-b border-border bg-card/50">
-                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                        <ShoppingCart className="text-primary" />
+            {/* Cart Section (Bottom Half on Mobile, Right on Desktop) */}
+            <Card className="w-full lg:w-[400px] flex flex-col glass-panel border-border h-[40vh] lg:h-full shadow-xl lg:shadow-none z-10">
+                <div className="p-3 lg:p-4 border-b border-border bg-card/50 flex justify-between items-center">
+                    <h2 className="text-lg lg:text-xl font-bold text-foreground flex items-center gap-2">
+                        <ShoppingCart className="text-primary" size={20} />
                         Venta Actual
                     </h2>
+                    <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded">
+                        {cart.length} items
+                    </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-2 lg:space-y-3">
                     <AnimatePresence>
                         {cart.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50">
