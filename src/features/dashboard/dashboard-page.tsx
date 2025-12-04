@@ -119,24 +119,48 @@ export function DashboardPage() {
         return Object.values(sellerStats).sort((a, b) => b.total - a.total);
     }, [dateFilteredSales, users]);
 
-    // 3. Top Selling Products
-    const topProducts = useMemo(() => {
-        const productStats: Record<string, { name: string; quantity: number; revenue: number }> = {};
+    // 3. Product Performance (Top & Bottom)
+    const { topProducts, leastSoldProducts } = useMemo(() => {
+        const stats: Record<string, { name: string; quantity: number; revenue: number }> = {};
 
+        // 1. Initialize all local products with 0 to catch items with NO sales
+        const myProducts = products.filter(p => {
+            if (currentUser?.role === 'SUPER_ADMIN') return false;
+            // Filter by local for Admin/Seller
+            return p.localId === currentUser?.localId;
+        });
+
+        myProducts.forEach(p => {
+            stats[p.id] = { name: p.name, quantity: 0, revenue: 0 };
+        });
+
+        // 2. Add sales data
         dateFilteredSales.forEach(sale => {
             sale.items.forEach(item => {
-                if (!productStats[item.id]) {
-                    productStats[item.id] = { name: item.name, quantity: 0, revenue: 0 };
+                if (!stats[item.id]) {
+                    // Item sold but not in current product list (maybe deleted or from another local if data mixed?)
+                    // We add it to stats to ensure Top Selling is accurate even for deleted items
+                    stats[item.id] = { name: item.name, quantity: 0, revenue: 0 };
                 }
-                productStats[item.id].quantity += item.quantity;
-                productStats[item.id].revenue += item.price * item.quantity;
+                stats[item.id].quantity += item.quantity;
+                stats[item.id].revenue += item.price * item.quantity;
             });
         });
 
-        return Object.values(productStats)
+        const allStats = Object.values(stats);
+
+        // Top Selling: Descending order
+        const top = [...allStats]
             .sort((a, b) => b.quantity - a.quantity)
-            .slice(0, 5); // Top 5
-    }, [dateFilteredSales]);
+            .slice(0, 5);
+
+        // Least Sold: Ascending order (will show 0 sales items first)
+        const bottom = [...allStats]
+            .sort((a, b) => a.quantity - b.quantity)
+            .slice(0, 5);
+
+        return { topProducts: top, leastSoldProducts: bottom };
+    }, [dateFilteredSales, products, currentUser]);
 
     // 4. Peak Hours Analysis
     const peakHours = useMemo(() => {
@@ -497,6 +521,33 @@ export function DashboardPage() {
                                             itemStyle={{ color: 'var(--foreground)' }}
                                         />
                                         <Bar dataKey="quantity" fill="#7c3aed" radius={[0, 4, 4, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Least Sold Products */}
+                    <Card className="glass-panel border-border bg-card">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-foreground">
+                                <AlertTriangle className="text-amber-500" size={20} />
+                                Productos Menos Vendidos
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={leastSoldProducts} layout="vertical">
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" horizontal={false} />
+                                        <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis dataKey="name" type="category" width={100} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                        <Tooltip
+                                            cursor={{ fill: 'rgba(128,128,128,0.1)' }}
+                                            contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--foreground)' }}
+                                            itemStyle={{ color: 'var(--foreground)' }}
+                                        />
+                                        <Bar dataKey="quantity" fill="#f59e0b" radius={[0, 4, 4, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
