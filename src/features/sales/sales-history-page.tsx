@@ -66,19 +66,30 @@ export function SalesHistoryPage() {
                                     <th className="px-6 py-3">Items</th>
                                     <th className="px-6 py-3">Método</th>
                                     <th className="px-6 py-3 text-right">Total</th>
+                                    <th className="px-6 py-3 text-right">Ganancia</th>
                                     <th className="px-6 py-3 rounded-tr-lg text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredSales.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                                        <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
                                             No se encontraron ventas registradas.
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredSales.map((sale) => {
                                         const seller = users.find(u => u.id === sale.sellerId);
+
+                                        // Calculate Profit
+                                        const saleRevenue = sale.finalTotal !== undefined ? sale.finalTotal : sale.total;
+                                        const saleCost = sale.items.reduce((acc, item) => {
+                                            const unitCost = item.costPrice || 0;
+                                            return acc + (unitCost * item.quantity);
+                                        }, 0);
+                                        const profit = saleRevenue - saleCost;
+                                        const margin = saleRevenue > 0 ? (profit / saleRevenue) * 100 : 0;
+
                                         return (
                                             <tr
                                                 key={sale.id}
@@ -117,7 +128,17 @@ export function SalesHistoryPage() {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-6 py-4 text-right font-bold text-foreground text-lg">
-                                                    ${sale.total.toLocaleString()}
+                                                    ${saleRevenue.toLocaleString()}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="font-bold text-emerald-500">
+                                                            ${profit.toLocaleString()}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {margin.toFixed(1)}%
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     <Button
