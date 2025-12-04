@@ -15,7 +15,7 @@ import { CheckCircle, Printer } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 export function POSPage() {
-    const { products, addSale, currentUser, locales, updateLocalCash } = useStore();
+    const { products, addSale, currentUser, locales, updateLocalCash, addToLocalCash } = useStore();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'TRANSFER'>('CASH');
@@ -124,10 +124,8 @@ export function POSPage() {
 
         // Update Cash in Register if payment is CASH
         if (paymentMethod === 'CASH') {
-            const currentLocal = locales.find(l => l.id === currentUser.localId);
-            if (currentLocal) {
-                const currentCash = currentLocal.cashInRegister || 0;
-                updateLocalCash(currentLocal.id, currentCash + finalTotal);
+            if (currentUser.localId) {
+                addToLocalCash(currentUser.localId, finalTotal);
             }
         }
 

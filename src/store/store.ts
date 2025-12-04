@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { type User, type Local, type Product, type Sale, type Notification } from '../types';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, where, getDocs, increment } from 'firebase/firestore';
 
 interface AppState {
     currentUser: User | null;
@@ -37,6 +37,7 @@ interface AppState {
     deleteLocal: (id: string) => void;
     toggleLocalStatus: (id: string) => void;
     updateLocalCash: (localId: string, amount: number) => void;
+    addToLocalCash: (localId: string, amount: number) => void;
 
     // Notification Actions
     markNotificationRead: (id: string) => void;
@@ -311,6 +312,16 @@ export const useStore = create<AppState>()(
                     await updateDoc(doc(db, "locales", localId), { cashInRegister: amount });
                 } catch (e) {
                     console.error("Error updating cash in register:", e);
+                }
+            },
+
+            addToLocalCash: async (localId, amount) => {
+                try {
+                    await updateDoc(doc(db, "locales", localId), {
+                        cashInRegister: increment(amount)
+                    });
+                } catch (e) {
+                    console.error("Error adding to cash register:", e);
                 }
             },
 
