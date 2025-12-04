@@ -10,7 +10,6 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Banknote, CreditCard, ArrowRight, CheckCircle2, Percent, DollarSign } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -129,7 +128,7 @@ export function PaymentModal({
                             <div className="flex bg-muted rounded-md p-1 gap-1">
                                 <Button
                                     type="button"
-                                    variant={discountType === 'FIXED' ? 'secondary' : 'ghost'}
+                                    variant={discountType === 'FIXED' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setDiscountType('FIXED')}
                                     className="h-8 px-2"
@@ -138,7 +137,7 @@ export function PaymentModal({
                                 </Button>
                                 <Button
                                     type="button"
-                                    variant={discountType === 'PERCENTAGE' ? 'secondary' : 'ghost'}
+                                    variant={discountType === 'PERCENTAGE' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setDiscountType('PERCENTAGE')}
                                     className="h-8 px-2"
