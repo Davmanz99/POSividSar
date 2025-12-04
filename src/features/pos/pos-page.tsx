@@ -173,7 +173,7 @@ export function POSPage() {
                 </div>
 
                 {/* Scrollable Product Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 overflow-y-auto pr-2 pb-2 flex-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 overflow-y-auto pr-2 pb-2 flex-1 content-start">
                     {filteredProducts.map(product => (
                         <motion.div
                             key={product.id}
@@ -182,20 +182,20 @@ export function POSPage() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.95 }}
                             className={`
-                cursor-pointer group relative overflow-hidden rounded-xl border p-3 lg:p-4 transition-all touch-manipulation
+                cursor-pointer group relative overflow-hidden rounded-xl border p-3 transition-all touch-manipulation h-fit
                 ${product.stock > 0
                                     ? 'bg-card border-border hover:border-primary/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.15)] active:bg-primary/10'
                                     : 'bg-destructive/5 border-destructive/20 opacity-60 cursor-not-allowed'}
               `}
                         >
-                            <div className="flex justify-between items-start mb-2 pointer-events-none">
-                                <Badge variant="outline" className="bg-muted/40 text-[10px]">{product.category}</Badge>
+                            <div className="flex justify-between items-start mb-1 pointer-events-none">
+                                <Badge variant="outline" className="bg-muted/40 text-[10px] px-1 py-0 h-5">{product.category}</Badge>
                                 <span className={`text-xs font-bold ${product.stock <= product.minStock ? 'text-amber-500' : 'text-emerald-500'}`}>
                                     {product.stock}
                                 </span>
                             </div>
-                            <h3 className="font-bold text-foreground mb-1 truncate text-sm lg:text-base pointer-events-none">{product.name}</h3>
-                            <p className="text-base lg:text-lg text-primary font-mono pointer-events-none">${product.price.toFixed(0)}</p>
+                            <h3 className="font-bold text-foreground mb-0.5 truncate text-sm pointer-events-none">{product.name}</h3>
+                            <p className="text-base text-primary font-mono pointer-events-none">${product.price.toFixed(0)}</p>
 
                             {/* Tech overlay effect */}
                             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -207,11 +207,11 @@ export function POSPage() {
             {/* Cart Section - Fixed Bottom on Mobile, Right Side on Desktop */}
             <Card className="
                 w-full lg:w-[400px] flex flex-col glass-panel border-border shadow-xl lg:shadow-none z-20
-                fixed bottom-0 left-0 right-0 h-[40vh] rounded-t-xl rounded-b-none border-t border-x lg:static lg:h-full lg:rounded-xl lg:border
+                fixed bottom-0 left-0 right-0 h-[50vh] rounded-t-xl rounded-b-none border-t border-x lg:static lg:h-full lg:rounded-xl lg:border
             ">
-                <div className="p-3 lg:p-4 border-b border-border bg-card/50 flex justify-between items-center shrink-0">
-                    <h2 className="text-lg lg:text-xl font-bold text-foreground flex items-center gap-2">
-                        <ShoppingCart className="text-primary" size={20} />
+                <div className="p-3 border-b border-border bg-card/50 flex justify-between items-center shrink-0 h-12">
+                    <h2 className="text-base lg:text-xl font-bold text-foreground flex items-center gap-2">
+                        <ShoppingCart className="text-primary" size={18} />
                         Venta Actual
                     </h2>
                     <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded">
@@ -219,7 +219,7 @@ export function POSPage() {
                     </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-2 lg:space-y-3">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
                     <AnimatePresence>
                         {cart.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50">
@@ -233,34 +233,34 @@ export function POSPage() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    className="flex items-center justify-between p-3 rounded-lg bg-card border border-border"
+                                    className="flex items-center justify-between p-2 rounded-lg bg-card border border-border"
                                 >
-                                    <div className="flex-1 min-w-0 mr-4">
+                                    <div className="flex-1 min-w-0 mr-2">
                                         <h4 className="text-sm font-medium text-foreground truncate">{item.name}</h4>
-                                        <p className="text-xs text-primary font-mono">${item.price.toFixed(2)}</p>
+                                        <p className="text-xs text-primary font-mono">${item.price.toFixed(0)}</p>
                                     </div>
 
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
                                             <button
                                                 onClick={() => updateQuantity(item.id, -1)}
                                                 className="p-1 hover:text-foreground text-muted-foreground transition-colors"
                                             >
-                                                <Minus size={14} />
+                                                <Minus size={12} />
                                             </button>
-                                            <span className="w-8 text-center text-sm font-mono text-foreground">{item.quantity}</span>
+                                            <span className="w-6 text-center text-xs font-mono text-foreground">{item.quantity}</span>
                                             <button
                                                 onClick={() => updateQuantity(item.id, 1)}
                                                 className="p-1 hover:text-foreground text-muted-foreground transition-colors"
                                             >
-                                                <Plus size={14} />
+                                                <Plus size={12} />
                                             </button>
                                         </div>
                                         <button
                                             onClick={() => removeFromCart(item.id)}
-                                            className="text-destructive hover:bg-destructive/10 p-1.5 rounded-md transition-colors"
+                                            className="text-destructive hover:bg-destructive/10 p-1 rounded-md transition-colors"
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={14} />
                                         </button>
                                     </div>
                                 </motion.div>
@@ -269,15 +269,15 @@ export function POSPage() {
                     </AnimatePresence>
                 </div>
 
-                <div className="p-4 bg-card/50 border-t border-border space-y-4">
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-sm text-muted-foreground">
+                <div className="p-3 bg-card/50 border-t border-border space-y-2 shrink-0">
+                    <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground lg:flex hidden">
                             <span>Subtotal</span>
-                            <span>${total.toFixed(2)}</span>
+                            <span>${total.toFixed(0)}</span>
                         </div>
-                        <div className="flex justify-between text-xl font-bold text-foreground">
+                        <div className="flex justify-between text-lg font-bold text-foreground">
                             <span>Total</span>
-                            <span className="text-primary font-mono">${total.toFixed(2)}</span>
+                            <span className="text-primary font-mono">${total.toFixed(0)}</span>
                         </div>
                     </div>
 
@@ -286,35 +286,35 @@ export function POSPage() {
                             variant={paymentMethod === 'CASH' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setPaymentMethod('CASH')}
-                            className="text-xs"
+                            className="text-xs h-8"
                         >
-                            <Banknote size={14} className="mr-1" /> Efectivo
+                            <Banknote size={14} className="mr-1" /> Efec.
                         </Button>
                         <Button
                             variant={paymentMethod === 'CARD' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setPaymentMethod('CARD')}
-                            className="text-xs"
+                            className="text-xs h-8"
                         >
-                            <CreditCard size={14} className="mr-1" /> Tarjeta
+                            <CreditCard size={14} className="mr-1" /> Tarj.
                         </Button>
                         <Button
                             variant={paymentMethod === 'TRANSFER' ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setPaymentMethod('TRANSFER')}
-                            className="text-xs"
+                            className="text-xs h-8"
                         >
-                            <ArrowRight size={14} className="mr-1" /> Transf.
+                            <ArrowRight size={14} className="mr-1" /> Trans.
                         </Button>
                     </div>
 
                     <Button
                         variant="neon"
-                        className="w-full h-12 text-lg font-bold tracking-wider"
+                        className="w-full h-10 text-base font-bold tracking-wider"
                         disabled={cart.length === 0}
                         onClick={handleCheckoutClick}
                     >
-                        COMPLETAR VENTA
+                        COBRAR
                     </Button>
                 </div>
             </Card>
