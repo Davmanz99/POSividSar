@@ -52,7 +52,7 @@ export function LoginForm() {
                 <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center shadow-[0_0_30px_rgba(0,240,255,0.2)] mb-4 group">
                     <Zap className="w-8 h-8 text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <CardTitle className="text-3xl text-white font-display tracking-tight">NEXUS<span className="text-primary">POS</span></CardTitle>
+                <CardTitle className="text-3xl text-white font-display tracking-tight">ividsar<span className="text-primary">POS</span></CardTitle>
                 <CardDescription className="text-base">Sistema de Gestión Inteligente</CardDescription>
             </CardHeader>
             <CardContent>

@@ -60,7 +60,7 @@ export const DashboardLayout = () => {
                     <Zap size={20} className="text-primary" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-foreground tracking-tight font-display">NEXUS<span className="text-primary">POS</span></h2>
+                    <h2 className="text-xl font-bold text-foreground tracking-tight font-display">ividsar<span className="text-primary">POS</span></h2>
                     <p className="text-[10px] text-primary/70 uppercase tracking-[0.2em]">System v2.0</p>
                 </div>
             </div>
@@ -129,7 +129,7 @@ export const DashboardLayout = () => {
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md border-b border-border z-50 flex items-center justify-between px-4">
                 <div className="flex items-center gap-2">
                     <Zap size={20} className="text-primary" />
-                    <span className="font-bold text-lg tracking-tight text-foreground">NEXUS<span className="text-primary">POS</span></span>
+                    <span className="font-bold text-lg tracking-tight text-foreground">ividsar<span className="text-primary">POS</span></span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-foreground">
                     <Menu size={24} />
