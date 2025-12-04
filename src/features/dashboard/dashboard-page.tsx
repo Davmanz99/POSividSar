@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '@/store/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     BarChart,
     Bar,
@@ -29,26 +31,50 @@ export function DashboardPage() {
         return sales.filter(s => s.sellerId === currentUser?.id);
     }, [sales, currentUser]);
 
+    // Date Filtering State
+    const [dateFilter, setDateFilter] = useState<'TODAY' | 'WEEK' | 'MONTH' | 'CUSTOM'>('TODAY');
+    const [customDays, setCustomDays] = useState<string>('7');
+
+    // Filter sales by date
+    const dateFilteredSales = useMemo(() => {
+        const now = new Date();
+        let startDate = new Date();
+
+        if (dateFilter === 'TODAY') {
+            startDate.setHours(0, 0, 0, 0);
+        } else if (dateFilter === 'WEEK') {
+            startDate.setDate(now.getDate() - 7);
+            startDate.setHours(0, 0, 0, 0);
+        } else if (dateFilter === 'MONTH') {
+            startDate.setMonth(now.getMonth() - 1);
+            startDate.setHours(0, 0, 0, 0);
+        } else if (dateFilter === 'CUSTOM') {
+            const days = parseInt(customDays) || 0;
+            startDate.setDate(now.getDate() - days);
+            startDate.setHours(0, 0, 0, 0);
+        }
+
+        return filteredSales.filter(sale => new Date(sale.date) >= startDate);
+    }, [filteredSales, dateFilter, customDays]);
+
     // 1. General Stats & Profit Analysis
     const stats = useMemo(() => {
         let totalRevenue = 0;
         let totalCost = 0;
 
-        filteredSales.forEach(sale => {
-            totalRevenue += sale.total;
+        dateFilteredSales.forEach(sale => {
+            // Use finalTotal if available (after discount), otherwise total
+            totalRevenue += (sale.finalTotal !== undefined ? sale.finalTotal : sale.total);
 
             // Calculate cost for this sale
             sale.items.forEach(item => {
-                // Try to use the cost stored in the item (snapshot), or fallback to current product cost
-                // Note: In a real app, cost should be snapshot at sale time.
-                // Since we just added the field, we might need to look up the product.
                 const product = products.find(p => p.id === item.id);
                 const unitCost = item.costPrice || product?.costPrice || 0;
                 totalCost += unitCost * item.quantity;
             });
         });
 
-        const totalOrders = filteredSales.length;
+        const totalOrders = dateFilteredSales.length;
         const averageTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
         const totalProfit = totalRevenue - totalCost;
         const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
@@ -61,7 +87,7 @@ export function DashboardPage() {
             orders: totalOrders,
             avgTicket: averageTicket
         };
-    }, [filteredSales, products]);
+    }, [dateFilteredSales, products]);
 
     // Super Admin Stats
     const superAdminStats = useMemo(() => {
@@ -79,7 +105,7 @@ export function DashboardPage() {
     const salesBySeller = useMemo(() => {
         const sellerStats: Record<string, { name: string; total: number; orders: number }> = {};
 
-        filteredSales.forEach(sale => {
+        dateFilteredSales.forEach(sale => {
             const seller = users.find(u => u.id === sale.sellerId);
             const sellerName = seller ? seller.name : 'Desconocido';
 
@@ -87,18 +113,18 @@ export function DashboardPage() {
                 sellerStats[sale.sellerId] = { name: sellerName, total: 0, orders: 0 };
             }
 
-            sellerStats[sale.sellerId].total += sale.total;
+            sellerStats[sale.sellerId].total += (sale.finalTotal !== undefined ? sale.finalTotal : sale.total);
             sellerStats[sale.sellerId].orders += 1;
         });
 
         return Object.values(sellerStats).sort((a, b) => b.total - a.total);
-    }, [filteredSales, users]);
+    }, [dateFilteredSales, users]);
 
     // 3. Top Selling Products
     const topProducts = useMemo(() => {
         const productStats: Record<string, { name: string; quantity: number; revenue: number }> = {};
 
-        filteredSales.forEach(sale => {
+        dateFilteredSales.forEach(sale => {
             sale.items.forEach(item => {
                 if (!productStats[item.id]) {
                     productStats[item.id] = { name: item.name, quantity: 0, revenue: 0 };
@@ -111,7 +137,7 @@ export function DashboardPage() {
         return Object.values(productStats)
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 5); // Top 5
-    }, [filteredSales]);
+    }, [dateFilteredSales]);
 
     // 4. Peak Hours Analysis
     const peakHours = useMemo(() => {
@@ -120,17 +146,17 @@ export function DashboardPage() {
         // Initialize all hours
         for (let i = 0; i < 24; i++) hours[i] = 0;
 
-        filteredSales.forEach(sale => {
+        dateFilteredSales.forEach(sale => {
             const date = new Date(sale.date);
             const hour = date.getHours();
-            hours[hour] += sale.total; // Sum revenue per hour, or could be count
+            hours[hour] += (sale.finalTotal !== undefined ? sale.finalTotal : sale.total);
         });
 
         return Object.entries(hours).map(([hour, total]) => ({
             hour: `${hour}:00`,
             total
         }));
-    }, [filteredSales]);
+    }, [dateFilteredSales]);
 
     // 5. Revenue vs Cost (Daily) - Simplified for demo (last 7 days logic could be added)
     // For now, let's just show a comparison bar chart of Total Revenue vs Total Cost
@@ -149,13 +175,58 @@ export function DashboardPage() {
             transition={{ duration: 0.5 }}
             className="space-y-6"
         >
-            <div>
-                <h1 className="text-3xl font-bold text-foreground font-display">Dashboard</h1>
-                <p className="text-muted-foreground">
-                    {currentUser.role === 'SUPER_ADMIN'
-                        ? 'Bienvenido, Super Admin. Gestión Global de Locales.'
-                        : `Bienvenido, ${currentUser.name}. Resumen de tu negocio.`}
-                </p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-foreground font-display">Dashboard</h1>
+                    <p className="text-muted-foreground">
+                        {currentUser.role === 'SUPER_ADMIN'
+                            ? 'Bienvenido, Super Admin. Gestión Global de Locales.'
+                            : `Bienvenido, ${currentUser.name}. Resumen de tu negocio.`}
+                    </p>
+                </div>
+
+                {currentUser.role !== 'SUPER_ADMIN' && (
+                    <div className="flex flex-wrap items-center gap-2 bg-card border border-border p-1 rounded-lg">
+                        <Button
+                            variant={dateFilter === 'TODAY' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setDateFilter('TODAY')}
+                            className="text-xs"
+                        >
+                            Hoy
+                        </Button>
+                        <Button
+                            variant={dateFilter === 'WEEK' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setDateFilter('WEEK')}
+                            className="text-xs"
+                        >
+                            7 Días
+                        </Button>
+                        <Button
+                            variant={dateFilter === 'MONTH' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setDateFilter('MONTH')}
+                            className="text-xs"
+                        >
+                            Mes
+                        </Button>
+                        <div className="flex items-center gap-2 pl-2 border-l border-border">
+                            <span className="text-xs text-muted-foreground hidden sm:inline">Personalizado:</span>
+                            <Input
+                                type="number"
+                                value={customDays}
+                                onChange={(e) => {
+                                    setCustomDays(e.target.value);
+                                    setDateFilter('CUSTOM');
+                                }}
+                                className="w-16 h-8 text-xs"
+                                placeholder="Días"
+                            />
+                            <span className="text-xs text-muted-foreground">días</span>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* SUPER ADMIN DASHBOARD */}
