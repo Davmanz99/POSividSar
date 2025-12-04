@@ -121,6 +121,16 @@ export function POSPage() {
         };
 
         addSale(sale);
+
+        // Update Cash in Register if payment is CASH
+        if (paymentMethod === 'CASH') {
+            const currentLocal = locales.find(l => l.id === currentUser.localId);
+            if (currentLocal) {
+                const currentCash = currentLocal.cashInRegister || 0;
+                updateLocalCash(currentLocal.id, currentCash + finalTotal);
+            }
+        }
+
         setCart([]);
         setSearchTerm(''); // Reset search after sale
         setIsPaymentModalOpen(false);
