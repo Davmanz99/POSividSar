@@ -173,29 +173,29 @@ export function POSPage() {
                     )}
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-2 pb-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-2 pb-2 h-[calc(100vh-14rem)] lg:h-auto">
                     {filteredProducts.map(product => (
                         <motion.div
                             key={product.id}
                             layoutId={product.id}
                             onClick={() => addToCart(product)}
                             whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                            whileTap={{ scale: 0.95 }}
                             className={`
-                cursor-pointer group relative overflow-hidden rounded-xl border p-4 transition-all
+                cursor-pointer group relative overflow-hidden rounded-xl border p-4 transition-all touch-manipulation
                 ${product.stock > 0
-                                    ? 'bg-card border-border hover:border-primary/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.15)]'
+                                    ? 'bg-card border-border hover:border-primary/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.15)] active:bg-primary/10'
                                     : 'bg-destructive/5 border-destructive/20 opacity-60 cursor-not-allowed'}
               `}
                         >
-                            <div className="flex justify-between items-start mb-2">
+                            <div className="flex justify-between items-start mb-2 pointer-events-none">
                                 <Badge variant="outline" className="bg-muted/40 text-[10px]">{product.category}</Badge>
                                 <span className={`text-xs font-bold ${product.stock <= product.minStock ? 'text-amber-500' : 'text-emerald-500'}`}>
                                     {product.stock} left
                                 </span>
                             </div>
-                            <h3 className="font-bold text-foreground mb-1 truncate">{product.name}</h3>
-                            <p className="text-lg text-primary font-mono">${product.price.toFixed(2)}</p>
+                            <h3 className="font-bold text-foreground mb-1 truncate pointer-events-none">{product.name}</h3>
+                            <p className="text-lg text-primary font-mono pointer-events-none">${product.price.toFixed(2)}</p>
 
                             {/* Tech overlay effect */}
                             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
