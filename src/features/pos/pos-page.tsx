@@ -140,9 +140,9 @@ export function POSPage() {
 
     return (
         <div className="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-4 lg:gap-6">
-            {/* Product Grid Section (Top Half on Mobile, Left on Desktop) */}
-            <div className="flex-1 flex flex-col gap-4 min-w-0 h-[50vh] lg:h-auto border-b lg:border-b-0 lg:border-r border-border pb-4 lg:pb-0">
-                <div className="flex items-center gap-4">
+            {/* Product Grid Section */}
+            <div className="flex-1 flex flex-col gap-4 min-w-0 h-full overflow-hidden">
+                <div className="flex items-center gap-4 shrink-0">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                         <Input
@@ -172,6 +172,7 @@ export function POSPage() {
                     )}
                 </div>
 
+                {/* Scrollable Product Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 overflow-y-auto pr-2 pb-2 flex-1">
                     {filteredProducts.map(product => (
                         <motion.div
@@ -203,9 +204,12 @@ export function POSPage() {
                 </div>
             </div>
 
-            {/* Cart Section (Bottom Half on Mobile, Right on Desktop) */}
-            <Card className="w-full lg:w-[400px] flex flex-col glass-panel border-border h-[40vh] lg:h-full shadow-xl lg:shadow-none z-10">
-                <div className="p-3 lg:p-4 border-b border-border bg-card/50 flex justify-between items-center">
+            {/* Cart Section - Fixed Bottom on Mobile, Right Side on Desktop */}
+            <Card className="
+                w-full lg:w-[400px] flex flex-col glass-panel border-border shadow-xl lg:shadow-none z-20
+                fixed bottom-0 left-0 right-0 h-[40vh] rounded-t-xl rounded-b-none border-t border-x lg:static lg:h-full lg:rounded-xl lg:border
+            ">
+                <div className="p-3 lg:p-4 border-b border-border bg-card/50 flex justify-between items-center shrink-0">
                     <h2 className="text-lg lg:text-xl font-bold text-foreground flex items-center gap-2">
                         <ShoppingCart className="text-primary" size={20} />
                         Venta Actual
