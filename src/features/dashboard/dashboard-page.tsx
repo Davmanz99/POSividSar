@@ -228,45 +228,60 @@ export function DashboardPage() {
                 </div>
 
                 {currentUser.role !== 'SUPER_ADMIN' && (
-                    <div className="flex flex-wrap items-center gap-2 bg-card border border-border p-1 rounded-lg">
-                        <Button
-                            variant={dateFilter === 'TODAY' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setDateFilter('TODAY')}
-                            className="text-xs"
-                        >
-                            Hoy
-                        </Button>
-                        <Button
-                            variant={dateFilter === 'WEEK' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setDateFilter('WEEK')}
-                            className="text-xs"
-                        >
-                            7 Días
-                        </Button>
-                        <Button
-                            variant={dateFilter === 'MONTH' ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setDateFilter('MONTH')}
-                            className="text-xs"
-                        >
-                            Mes
-                        </Button>
-                        <div className="flex items-center gap-2 pl-2 border-l border-border">
-                            <span className="text-xs text-muted-foreground hidden sm:inline">Personalizado:</span>
-                            <Input
-                                type="number"
-                                value={customDays}
-                                onChange={(e) => {
-                                    setCustomDays(e.target.value);
-                                    setDateFilter('CUSTOM');
-                                }}
-                                className="w-16 h-8 text-xs"
-                                placeholder="Días"
-                            />
-                            <span className="text-xs text-muted-foreground">días</span>
+                    <div className="flex flex-col items-end gap-2">
+                        <div className="flex flex-wrap items-center gap-2 bg-card border border-border p-1 rounded-lg">
+                            <Button
+                                variant={dateFilter === 'TODAY' ? 'default' : 'ghost'}
+                                size="sm"
+                                onClick={() => setDateFilter('TODAY')}
+                                className="text-xs"
+                            >
+                                Hoy
+                            </Button>
+                            <Button
+                                variant={dateFilter === 'WEEK' ? 'default' : 'ghost'}
+                                size="sm"
+                                onClick={() => setDateFilter('WEEK')}
+                                className="text-xs"
+                            >
+                                7 Días
+                            </Button>
+                            <Button
+                                variant={dateFilter === 'MONTH' ? 'default' : 'ghost'}
+                                size="sm"
+                                onClick={() => setDateFilter('MONTH')}
+                                className="text-xs"
+                            >
+                                Mes
+                            </Button>
+                            <div className="flex items-center gap-2 pl-2 border-l border-border">
+                                <span className="text-xs text-muted-foreground hidden sm:inline">Personalizado:</span>
+                                <Input
+                                    type="number"
+                                    value={customDays}
+                                    onChange={(e) => {
+                                        setCustomDays(e.target.value);
+                                        setDateFilter('CUSTOM');
+                                    }}
+                                    className="w-16 h-8 text-xs"
+                                    placeholder="Días"
+                                />
+                                <span className="text-xs text-muted-foreground">días</span>
+                            </div>
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                            Mostrando datos desde: <span className="font-medium text-foreground">
+                                {(() => {
+                                    const now = new Date();
+                                    let d = new Date();
+                                    if (dateFilter === 'TODAY') d.setHours(0, 0, 0, 0);
+                                    else if (dateFilter === 'WEEK') d.setDate(now.getDate() - 7);
+                                    else if (dateFilter === 'MONTH') d.setMonth(now.getMonth() - 1);
+                                    else if (dateFilter === 'CUSTOM') d.setDate(now.getDate() - (parseInt(customDays) || 0));
+                                    return d.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
+                                })()}
+                            </span>
+                        </p>
                     </div>
                 )}
             </div>
