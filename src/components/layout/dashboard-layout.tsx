@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '@/store/store';
 import { useNavigate, Outlet, useLocation, Navigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, Store, Users, ShoppingCart, Package, Menu, X, Zap, Search } from 'lucide-react';
+import { LogOut, LayoutDashboard, Store, Users, ShoppingCart, Package, Menu, X, Zap, Search, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -80,6 +80,7 @@ export const DashboardLayout = () => {
                         <NavItem icon={Package} label="Inventario" path="/inventory" />
                         <NavItem icon={ShoppingCart} label="Terminal POS" path="/pos" />
                         <NavItem icon={Store} label="Historial Ventas" path="/history" />
+                        <NavItem icon={ListTodo} label="Tareas" path="/tasks" />
                     </>
                 )}
 
@@ -87,6 +88,7 @@ export const DashboardLayout = () => {
                     <>
                         <NavItem icon={ShoppingCart} label="Terminal POS" path="/pos" />
                         <NavItem icon={Store} label="Historial Ventas" path="/history" />
+                        <NavItem icon={ListTodo} label="Mis Tareas" path="/tasks" />
                     </>
                 )}
             </div>

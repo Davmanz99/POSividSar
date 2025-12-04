@@ -7,6 +7,7 @@ import { InventoryPage } from '@/features/inventory/inventory-page';
 import { POSPage } from '@/features/pos/pos-page';
 import { LocalesPage } from '@/features/dashboard/locales-page';
 import { SalesHistoryPage } from '@/features/sales/sales-history-page';
+import { TasksPage } from '@/features/tasks/TasksPage';
 import { ProfilePage } from '@/features/profile/profile-page';
 
 // Placeholders for now
@@ -35,6 +36,7 @@ function App() {
                     <Route path="/locales" element={<LocalesPage />} />
                     <Route path="/users" element={<UsersPage />} />
                     <Route path="/history" element={<SalesHistoryPage />} />
+                    <Route path="/tasks" element={<TasksPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                 </Route>
 

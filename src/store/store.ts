@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { type User, type Local, type Product, type Sale, type Notification } from '../types';
+import { type User, type Local, type Product, type Sale, type Notification, type Task } from '../types';
 
 import { db } from '@/lib/firebase';
 import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, query, where, getDocs, increment } from 'firebase/firestore';
@@ -12,6 +12,7 @@ interface AppState {
     products: Product[];
     sales: Sale[];
     notifications: Notification[];
+    tasks: Task[];
 
     failedAttempts: Record<string, number>;
     lockoutUntil: Record<string, number>;
@@ -43,6 +44,11 @@ interface AppState {
     markNotificationRead: (id: string) => void;
     clearNotifications: () => void;
 
+    // Task Actions
+    addTask: (task: Task) => void;
+    updateTask: (id: string, updates: Partial<Task>) => void;
+    deleteTask: (id: string) => void;
+
     // Firebase Init
     initializeListeners: () => () => void; // Returns unsubscribe function
 }
@@ -67,6 +73,7 @@ export const useStore = create<AppState>()(
             products: [],
             sales: [],
             notifications: [],
+            tasks: [],
             failedAttempts: {},
             lockoutUntil: {},
 
@@ -99,6 +106,11 @@ export const useStore = create<AppState>()(
                 // Sales Listener
                 unsubs.push(onSnapshot(collection(db, "sales"), (snapshot) => {
                     set({ sales: snapshot.docs.map(d => d.data() as Sale) });
+                }));
+
+                // Tasks Listener
+                unsubs.push(onSnapshot(collection(db, "tasks"), (snapshot) => {
+                    set({ tasks: snapshot.docs.map(d => d.data() as Task) });
                 }));
 
                 return () => unsubs.forEach(u => u());
@@ -338,6 +350,30 @@ export const useStore = create<AppState>()(
                 set((state) => ({
                     notifications: state.notifications.filter(n => !n.read) // Keep unread or clear all? Usually clear all read.
                 })),
+
+            addTask: async (task) => {
+                try {
+                    await setDoc(doc(db, "tasks", task.id), task);
+                } catch (e) {
+                    console.error("Error adding task:", e);
+                }
+            },
+
+            updateTask: async (id, updates) => {
+                try {
+                    await updateDoc(doc(db, "tasks", id), updates);
+                } catch (e) {
+                    console.error("Error updating task:", e);
+                }
+            },
+
+            deleteTask: async (id) => {
+                try {
+                    await deleteDoc(doc(db, "tasks", id));
+                } catch (e) {
+                    console.error("Error deleting task:", e);
+                }
+            },
         }),
         {
             name: 'pos-ultimate-storage',

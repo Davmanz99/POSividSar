@@ -62,3 +62,16 @@ export interface Notification {
     read: boolean;
     productId?: string; // Link to product if applicable
 }
+
+export interface Task {
+    id: string;
+    localId: string;
+    assignedToId: string; // Seller ID
+    assignedById: string; // Admin ID
+    title: string;
+    description?: string;
+    dueDate?: string; // ISO Date string
+    status: 'PENDING' | 'COMPLETED';
+    completedAt?: string;
+    createdAt: string;
+}
