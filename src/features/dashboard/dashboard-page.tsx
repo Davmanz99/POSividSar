@@ -12,8 +12,7 @@ import {
     Tooltip,
     ResponsiveContainer,
     AreaChart,
-    Area,
-    Legend
+    Area
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { DollarSign, ShoppingBag, TrendingUp, Users, Clock, PieChart, Building2, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -158,13 +157,56 @@ export function DashboardPage() {
         }));
     }, [dateFilteredSales]);
 
-    // 5. Revenue vs Cost (Daily) - Simplified for demo (last 7 days logic could be added)
-    // For now, let's just show a comparison bar chart of Total Revenue vs Total Cost
-    const financialOverview = [
-        { name: 'Finanzas', Ingresos: stats.revenue, Costos: stats.cost, Utilidad: stats.profit }
-    ];
+    // 5. Sales Over Time (Daily/Hourly)
+    const salesTrends = useMemo(() => {
+        const data: Record<string, { name: string; total: number }> = {};
 
+        // Helper to format date key
+        const formatDateKey = (dateStr: string) => {
+            const date = new Date(dateStr);
+            if (dateFilter === 'TODAY') {
+                // Group by Hour for Today
+                return `${date.getHours()}:00`;
+            }
+            // Group by Day for others
+            return date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+        };
 
+        // Initialize keys based on range to ensure empty days/hours show up as 0
+        const now = new Date();
+        if (dateFilter === 'TODAY') {
+            for (let i = 0; i <= now.getHours(); i++) {
+                const key = `${i}:00`;
+                data[key] = { name: key, total: 0 };
+            }
+        } else {
+            // For Week/Month/Custom, initialize days
+            let daysToSubtract = 7;
+            if (dateFilter === 'MONTH') daysToSubtract = 30;
+            if (dateFilter === 'CUSTOM') daysToSubtract = parseInt(customDays) || 7;
+
+            for (let i = daysToSubtract; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const key = d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+                data[key] = { name: key, total: 0 };
+            }
+        }
+
+        // Fill with actual data
+        dateFilteredSales.forEach(sale => {
+            const key = formatDateKey(sale.date);
+            if (data[key]) {
+                data[key].total += (sale.finalTotal !== undefined ? sale.finalTotal : sale.total);
+            } else if (dateFilter !== 'TODAY') {
+                // Handle edge cases where date might be slightly out of initialized range due to time
+                // or just add it if it matches the filter
+                data[key] = { name: key, total: (sale.finalTotal !== undefined ? sale.finalTotal : sale.total) };
+            }
+        });
+
+        return Object.values(data);
+    }, [dateFilteredSales, dateFilter, customDays]);
 
     if (!currentUser) return null;
 
@@ -360,30 +402,27 @@ export function DashboardPage() {
             {(currentUser.role === 'ADMIN') && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                    {/* Financial Overview Chart */}
+                    {/* Sales Over Time Chart (Replaces Financial Overview) */}
                     <Card className="glass-panel col-span-1 lg:col-span-2 border-border bg-card">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-foreground">
                                 <DollarSign className="text-emerald-500" size={20} />
-                                Resumen Financiero (Ingresos vs Costos)
+                                Ventas en el Tiempo ({dateFilter === 'TODAY' ? 'Por Hora' : 'Por Día'})
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="h-[200px] w-full">
+                            <div className="h-[300px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={financialOverview} layout="vertical">
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" horizontal={false} />
-                                        <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                        <YAxis dataKey="name" type="category" width={100} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} hide />
+                                    <BarChart data={salesTrends}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.2)" vertical={false} />
+                                        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                                         <Tooltip
                                             cursor={{ fill: 'rgba(128,128,128,0.1)' }}
                                             contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--foreground)' }}
                                             itemStyle={{ color: 'var(--foreground)' }}
                                         />
-                                        <Legend />
-                                        <Bar dataKey="Ingresos" fill="#0891b2" radius={[0, 4, 4, 0]} barSize={30} />
-                                        <Bar dataKey="Costos" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={30} />
-                                        <Bar dataKey="Utilidad" fill="#10b981" radius={[0, 4, 4, 0]} barSize={30} />
+                                        <Bar dataKey="total" fill="#0891b2" radius={[4, 4, 0, 0]} name="Ventas" />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
