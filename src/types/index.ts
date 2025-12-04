@@ -31,6 +31,7 @@ export interface Product {
     sku: string; // Barcode
     barcode?: string; // Alternative barcode field if SKU is internal
     costPrice?: number; // Cost price of the product
+    measurementUnit?: 'UNIT' | 'KG' | 'GRAM' | 'LITER'; // Unit of measurement
 }
 
 export interface CartItem extends Product {

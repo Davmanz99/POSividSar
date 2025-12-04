@@ -28,6 +28,13 @@ export function POSPage() {
     const [lastSale, setLastSale] = useState<Sale | null>(null);
 
     // Filter products
+    // Quantity Modal State
+    const [quantityModal, setQuantityModal] = useState<{ isOpen: boolean; product: Product | null; quantity: string }>({
+        isOpen: false,
+        product: null,
+        quantity: ''
+    });
+
     // Filter products
     const filteredProducts = products.filter(p => {
         // 1. Filter by Local (Strict Isolation)
@@ -47,6 +54,12 @@ export function POSPage() {
     const addToCart = (product: Product) => {
         if (product.stock <= 0) return;
 
+        // If it's a weight-based product (not UNIT), open quantity modal
+        if (product.measurementUnit && product.measurementUnit !== 'UNIT') {
+            setQuantityModal({ isOpen: true, product, quantity: '' });
+            return;
+        }
+
         setCart(prev => {
             const existing = prev.find(item => item.id === product.id);
             if (existing) {
@@ -57,6 +70,32 @@ export function POSPage() {
             }
             return [...prev, { ...product, quantity: 1 }];
         });
+    };
+
+    const handleQuantitySubmit = () => {
+        const { product, quantity } = quantityModal;
+        if (!product || !quantity) return;
+
+        const qty = parseFloat(quantity);
+        if (isNaN(qty) || qty <= 0) return;
+
+        setCart(prev => {
+            const existing = prev.find(item => item.id === product.id);
+            if (existing) {
+                // For weight items, we just update the quantity (add to existing)
+                const newQty = existing.quantity + qty;
+                if (newQty > product.stock) {
+                    alert("No hay suficiente stock");
+                    return prev;
+                }
+                return prev.map(item =>
+                    item.id === product.id ? { ...item, quantity: newQty } : item
+                );
+            }
+            return [...prev, { ...product, quantity: qty }];
+        });
+
+        setQuantityModal({ isOpen: false, product: null, quantity: '' });
     };
 
     // Barcode Scanner Hook
@@ -78,9 +117,16 @@ export function POSPage() {
     const updateQuantity = (id: string, delta: number) => {
         setCart(prev => prev.map(item => {
             if (item.id === id) {
-                const newQty = item.quantity + delta;
+                // Determine step based on unit
+                const isUnit = !item.measurementUnit || item.measurementUnit === 'UNIT';
+                const step = isUnit ? 1 : 0.1;
+                const change = delta * step;
+
+                const newQty = Math.max(0, parseFloat((item.quantity + change).toFixed(3)));
+
                 if (newQty > item.stock) return item; // Stock limit
-                if (newQty < 1) return item;
+                if (newQty <= 0) return item; // Don't remove, just stop at min (or could remove)
+
                 return { ...item, quantity: newQty };
             }
             return item;
@@ -194,11 +240,16 @@ export function POSPage() {
                             <div className="flex justify-between items-start mb-1 pointer-events-none">
                                 <Badge variant="outline" className="bg-muted/40 text-[10px] px-1 py-0 h-5">{product.category}</Badge>
                                 <span className={`text-xs font-bold ${product.stock <= product.minStock ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                    {product.stock}
+                                    {product.stock} {product.measurementUnit === 'KG' ? 'kg' : product.measurementUnit === 'GRAM' ? 'g' : product.measurementUnit === 'LITER' ? 'L' : ''}
                                 </span>
                             </div>
                             <h3 className="font-bold text-foreground mb-0.5 truncate text-sm pointer-events-none">{product.name}</h3>
-                            <p className="text-base text-primary font-mono pointer-events-none">${product.price.toFixed(0)}</p>
+                            <p className="text-base text-primary font-mono pointer-events-none">
+                                ${product.price.toFixed(0)}
+                                <span className="text-xs text-muted-foreground ml-1">
+                                    /{product.measurementUnit === 'KG' ? 'kg' : product.measurementUnit === 'GRAM' ? 'g' : product.measurementUnit === 'LITER' ? 'L' : 'un'}
+                                </span>
+                            </p>
 
                             {/* Tech overlay effect */}
                             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -240,7 +291,9 @@ export function POSPage() {
                                 >
                                     <div className="flex-1 min-w-0 mr-2">
                                         <h4 className="text-sm font-medium text-foreground truncate">{item.name}</h4>
-                                        <p className="text-xs text-primary font-mono">${item.price.toFixed(0)}</p>
+                                        <p className="text-xs text-primary font-mono">
+                                            ${item.price.toFixed(0)} x {item.quantity} {item.measurementUnit === 'KG' ? 'kg' : item.measurementUnit === 'GRAM' ? 'g' : item.measurementUnit === 'LITER' ? 'L' : ''}
+                                        </p>
                                     </div>
 
                                     <div className="flex items-center gap-2">
@@ -251,7 +304,9 @@ export function POSPage() {
                                             >
                                                 <Minus size={12} />
                                             </button>
-                                            <span className="w-6 text-center text-xs font-mono text-foreground">{item.quantity}</span>
+                                            <span className="w-12 text-center text-xs font-mono text-foreground">
+                                                {item.quantity % 1 === 0 ? item.quantity : item.quantity.toFixed(3)}
+                                            </span>
                                             <button
                                                 onClick={() => updateQuantity(item.id, 1)}
                                                 className="p-1 hover:text-foreground text-muted-foreground transition-colors"
@@ -329,6 +384,42 @@ export function POSPage() {
                 totalAmount={total}
                 paymentMethod={paymentMethod}
             />
+
+            {/* Quantity Modal for Weight-based items */}
+            <Dialog open={quantityModal.isOpen} onOpenChange={(open) => !open && setQuantityModal(prev => ({ ...prev, isOpen: false }))}>
+                <DialogContent className="sm:max-w-[425px] bg-card border-white/10">
+                    <DialogHeader>
+                        <DialogTitle>Ingresar Cantidad</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                                Cantidad ({quantityModal.product?.measurementUnit === 'KG' ? 'Kilogramos' : quantityModal.product?.measurementUnit === 'GRAM' ? 'Gramos' : 'Litros'})
+                            </label>
+                            <Input
+                                type="number"
+                                placeholder="0.000"
+                                value={quantityModal.quantity}
+                                onChange={(e) => setQuantityModal(prev => ({ ...prev, quantity: e.target.value }))}
+                                className="text-lg"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleQuantitySubmit();
+                                }}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Precio por unidad: ${quantityModal.product?.price.toFixed(0)}
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setQuantityModal(prev => ({ ...prev, isOpen: false }))}>Cancelar</Button>
+                        <Button variant="neon" onClick={handleQuantitySubmit}>
+                            Agregar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Success Modal */}
             <AnimatePresence>

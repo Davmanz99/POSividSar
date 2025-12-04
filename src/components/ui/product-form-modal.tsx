@@ -18,10 +18,11 @@ const productSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     sku: z.string().min(3, "El SKU debe tener al menos 3 caracteres"),
     category: z.string().min(2, "La categoría es requerida"),
+    measurementUnit: z.enum(['UNIT', 'KG', 'GRAM', 'LITER']).default('UNIT'),
     price: z.coerce.number().min(0, "El precio no puede ser negativo"),
     costPrice: z.coerce.number().min(0, "El costo no puede ser negativo").optional(),
-    stock: z.coerce.number().int().min(0, "El stock no puede ser negativo"),
-    minStock: z.coerce.number().int().min(0, "El stock mínimo no puede ser negativo"),
+    stock: z.coerce.number().min(0, "El stock no puede ser negativo"),
+    minStock: z.coerce.number().min(0, "El stock mínimo no puede ser negativo"),
     localId: z.string().min(1, "Debes asignar un local"),
 })
 
@@ -56,6 +57,7 @@ export function ProductFormModal({
             name: '',
             sku: '',
             category: '',
+            measurementUnit: 'UNIT',
             price: '' as any,
             costPrice: '' as any,
             stock: 0,
@@ -71,6 +73,7 @@ export function ProductFormModal({
                     name: initialData.name,
                     sku: initialData.sku,
                     category: initialData.category,
+                    measurementUnit: initialData.measurementUnit || 'UNIT',
                     price: initialData.price,
                     costPrice: initialData.costPrice || 0,
                     stock: initialData.stock,
@@ -82,6 +85,7 @@ export function ProductFormModal({
                     name: '',
                     sku: '',
                     category: '',
+                    measurementUnit: 'UNIT',
                     price: '' as any,
                     costPrice: '' as any,
                     stock: 0,
@@ -123,6 +127,20 @@ export function ProductFormModal({
                             <Input {...register("category")} placeholder="Bebidas" />
                             {errors.category && <p className="text-xs text-destructive">{errors.category.message}</p>}
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Unidad de Medida</label>
+                        <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            {...register("measurementUnit")}
+                        >
+                            <option value="UNIT">Unidad (c/u)</option>
+                            <option value="KG">Kilogramos (kg)</option>
+                            <option value="GRAM">Gramos (g)</option>
+                            <option value="LITER">Litros (L)</option>
+                        </select>
+                        {errors.measurementUnit && <p className="text-xs text-destructive">{errors.measurementUnit.message}</p>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
