@@ -113,11 +113,10 @@ export function POSPage() {
             items: cart,
             total, // Original total
             finalTotal, // Discounted total
-            discount: discount?.value,
-            discountType: discount?.type,
             date: new Date().toISOString(),
             paymentMethod,
-            amountTendered // Optional: store this if needed in the future
+            ...(discount ? { discount: discount.value, discountType: discount.type } : {}),
+            ...(amountTendered !== undefined ? { amountTendered } : {})
         };
 
         const success = await addSale(sale);
