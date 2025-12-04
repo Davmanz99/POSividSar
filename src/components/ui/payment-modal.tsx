@@ -38,6 +38,7 @@ export function PaymentModal({
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
+            console.log("PaymentModal Open - Discount Version Active");
             setAmountTendered('');
             setChange(0);
             setDiscountValue('');
