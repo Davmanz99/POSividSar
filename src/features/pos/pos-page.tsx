@@ -94,7 +94,7 @@ export function POSPage() {
         setIsPaymentModalOpen(true);
     };
 
-    const handleConfirmPayment = (amountTendered?: number, discount?: { value: number, type: 'FIXED' | 'PERCENTAGE' }) => {
+    const handleConfirmPayment = async (amountTendered?: number, discount?: { value: number, type: 'FIXED' | 'PERCENTAGE' }) => {
         if (!currentUser) return;
 
         let finalTotal = total;
@@ -120,22 +120,26 @@ export function POSPage() {
             amountTendered // Optional: store this if needed in the future
         };
 
-        addSale(sale);
+        const success = await addSale(sale);
 
-        // Update Cash in Register if payment is CASH
-        if (paymentMethod === 'CASH') {
-            if (currentUser.localId) {
-                addToLocalCash(currentUser.localId, finalTotal);
+        if (success) {
+            // Update Cash in Register if payment is CASH
+            if (paymentMethod === 'CASH') {
+                if (currentUser.localId) {
+                    addToLocalCash(currentUser.localId, finalTotal);
+                }
             }
+
+            setCart([]);
+            setSearchTerm(''); // Reset search after sale
+            setIsPaymentModalOpen(false);
+
+            // Open Success Modal
+            setLastSale(sale);
+            setIsSuccessModalOpen(true);
+        } else {
+            alert("Error al procesar la venta. Por favor intente nuevamente.");
         }
-
-        setCart([]);
-        setSearchTerm(''); // Reset search after sale
-        setIsPaymentModalOpen(false);
-
-        // Open Success Modal
-        setLastSale(sale);
-        setIsSuccessModalOpen(true);
     };
 
     return (

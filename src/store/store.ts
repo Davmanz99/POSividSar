@@ -29,7 +29,7 @@ interface AppState {
     deleteProduct: (id: string) => void;
 
     // Sales Actions
-    addSale: (sale: Sale) => void;
+    addSale: (sale: Sale) => Promise<boolean>;
 
     // Local Actions
     addLocal: (local: Local) => void;
@@ -266,8 +266,10 @@ export const useStore = create<AppState>()(
                             await updateDoc(doc(db, "products", product.id), { stock: newStock });
                         }
                     }
+                    return true;
                 } catch (e) {
                     console.error("Error adding sale:", e);
+                    return false;
                 }
             },
 
