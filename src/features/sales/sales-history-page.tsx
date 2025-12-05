@@ -204,7 +204,7 @@ export function SalesHistoryPage() {
                                                     </Button>
 
                                                     {/* Cancellation Actions */}
-                                                    {sale.status === 'COMPLETED' && (
+                                                    {(sale.status === 'COMPLETED' || !sale.status) && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
