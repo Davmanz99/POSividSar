@@ -50,6 +50,11 @@ export interface Sale {
     discountType?: 'FIXED' | 'PERCENTAGE';
     finalTotal?: number;
     amountTendered?: number;
+    status?: 'COMPLETED' | 'CANCELLED' | 'CANCELLATION_REQUESTED';
+    cancellationReason?: string;
+    cancellationRequestedBy?: string; // User ID
+    cancellationApprovedBy?: string; // Admin ID
+    cancellationDate?: string;
 }
 
 export interface Notification {

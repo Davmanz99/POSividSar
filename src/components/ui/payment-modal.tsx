@@ -17,6 +17,7 @@ interface PaymentModalProps {
     onConfirm: (amountTendered?: number, discount?: { value: number, type: 'FIXED' | 'PERCENTAGE' }) => void;
     totalAmount: number;
     paymentMethod: 'CASH' | 'CARD' | 'TRANSFER';
+    isLoading?: boolean;
 }
 
 export function PaymentModal({
@@ -24,7 +25,8 @@ export function PaymentModal({
     onClose,
     onConfirm,
     totalAmount,
-    paymentMethod
+    paymentMethod,
+    isLoading = false
 }: PaymentModalProps) {
     const [amountTendered, setAmountTendered] = useState<string>('');
     const [change, setChange] = useState<number>(0);
@@ -207,10 +209,10 @@ export function PaymentModal({
                     <Button
                         variant="neon"
                         onClick={handleConfirm}
-                        disabled={isConfirmDisabled()}
+                        disabled={isConfirmDisabled() || isLoading}
                         className="w-full sm:w-auto"
                     >
-                        Confirmar Venta
+                        {isLoading ? 'Procesando...' : 'Confirmar Venta'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -22,6 +22,7 @@ export function POSPage() {
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
     const [cashAmount, setCashAmount] = useState('');
+    const [isProcessingSale, setIsProcessingSale] = useState(false);
 
     // Success Modal State
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -161,11 +162,14 @@ export function POSPage() {
             finalTotal, // Discounted total
             date: new Date().toISOString(),
             paymentMethod,
+            status: 'COMPLETED',
             ...(discount ? { discount: discount.value, discountType: discount.type } : {}),
             ...(amountTendered !== undefined ? { amountTendered } : {})
         };
 
+        setIsProcessingSale(true);
         const success = await addSale(sale);
+        setIsProcessingSale(false);
 
         if (success) {
             // Update Cash in Register if payment is CASH
@@ -383,6 +387,7 @@ export function POSPage() {
                 onConfirm={handleConfirmPayment}
                 totalAmount={total}
                 paymentMethod={paymentMethod}
+                isLoading={isProcessingSale}
             />
 
             {/* Quantity Modal for Weight-based items */}

@@ -32,6 +32,9 @@ interface AppState {
 
     // Sales Actions
     addSale: (sale: Sale) => Promise<boolean>;
+    cancelSale: (saleId: string, reason: string, userId: string, userRole: string) => Promise<void>;
+    approveCancellation: (saleId: string, adminId: string) => Promise<void>;
+    rejectCancellation: (saleId: string) => Promise<void>;
 
     // Local Actions
     addLocal: (local: Local) => void;
@@ -284,6 +287,86 @@ export const useStore = create<AppState>()(
                 } catch (e) {
                     console.error("Error adding sale:", e);
                     return false;
+                }
+            },
+
+            cancelSale: async (saleId, reason, userId, userRole) => {
+                const state = get();
+                const sale = state.sales.find(s => s.id === saleId);
+                if (!sale) return;
+
+                const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+                const now = new Date().toISOString();
+
+                try {
+                    if (isAdmin) {
+                        // Admin: Cancel immediately and restore stock
+                        await updateDoc(doc(db, "sales", saleId), {
+                            status: 'CANCELLED',
+                            cancellationReason: reason,
+                            cancellationApprovedBy: userId,
+                            cancellationDate: now
+                        });
+
+                        // Restore Stock
+                        for (const item of sale.items) {
+                            const product = state.products.find(p => p.id === item.id);
+                            if (product) {
+                                await updateDoc(doc(db, "products", product.id), {
+                                    stock: increment(item.quantity)
+                                });
+                            }
+                        }
+                    } else {
+                        // Seller: Request Cancellation
+                        await updateDoc(doc(db, "sales", saleId), {
+                            status: 'CANCELLATION_REQUESTED',
+                            cancellationReason: reason,
+                            cancellationRequestedBy: userId,
+                            cancellationDate: now
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error cancelling sale:", e);
+                }
+            },
+
+            approveCancellation: async (saleId, adminId) => {
+                const state = get();
+                const sale = state.sales.find(s => s.id === saleId);
+                if (!sale) return;
+
+                try {
+                    await updateDoc(doc(db, "sales", saleId), {
+                        status: 'CANCELLED',
+                        cancellationApprovedBy: adminId
+                    });
+
+                    // Restore Stock
+                    for (const item of sale.items) {
+                        const product = state.products.find(p => p.id === item.id);
+                        if (product) {
+                            await updateDoc(doc(db, "products", product.id), {
+                                stock: increment(item.quantity)
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error approving cancellation:", e);
+                }
+            },
+
+            rejectCancellation: async (saleId) => {
+                try {
+                    // Revert status to COMPLETED (or remove cancellation flags if preferred, but keeping history is better)
+                    // Actually, if rejected, we just set status back to COMPLETED but maybe keep the request history?
+                    // For simplicity, let's just set status back to COMPLETED.
+                    await updateDoc(doc(db, "sales", saleId), {
+                        status: 'COMPLETED',
+                        // Optional: clear request fields or keep them for audit? Let's keep them but change status.
+                    });
+                } catch (e) {
+                    console.error("Error rejecting cancellation:", e);
                 }
             },
 

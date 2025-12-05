@@ -8,10 +8,49 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { printReceipt } from '@/utils/receipt-printer';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertTriangle, XCircle, CheckCircle2 } from 'lucide-react';
 
 export function SalesHistoryPage() {
-    const { sales, users, currentUser, locales } = useStore();
+    const { sales, users, currentUser, locales, cancelSale, approveCancellation, rejectCancellation } = useStore();
     const [searchTerm, setSearchTerm] = useState('');
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
+    const [cancellationReason, setCancellationReason] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const handleCancelClick = (saleId: string) => {
+        setSelectedSaleId(saleId);
+        setCancellationReason('');
+        setCancelDialogOpen(true);
+    };
+
+    const handleConfirmCancellation = async () => {
+        if (!selectedSaleId || !currentUser) return;
+        if (!cancellationReason.trim()) {
+            alert("Debe ingresar un motivo.");
+            return;
+        }
+
+        setIsProcessing(true);
+        await cancelSale(selectedSaleId, cancellationReason, currentUser.id, currentUser.role);
+        setIsProcessing(false);
+        setCancelDialogOpen(false);
+    };
+
+    const handleApproveCancellation = async (saleId: string) => {
+        if (!currentUser) return;
+        if (confirm("¿Aprobar anulación y restaurar stock?")) {
+            await approveCancellation(saleId, currentUser.id);
+        }
+    };
+
+    const handleRejectCancellation = async (saleId: string) => {
+        if (confirm("¿Rechazar anulación? La venta volverá a estado completado.")) {
+            await rejectCancellation(saleId);
+        }
+    };
 
     // Filter sales based on role and search
     const filteredSales = sales.filter(sale => {
@@ -100,6 +139,17 @@ export function SalesHistoryPage() {
                                                         <Calendar size={14} className="text-primary" />
                                                         {format(new Date(sale.date), 'dd MMM yyyy HH:mm', { locale: es })}
                                                     </div>
+                                                    {sale.status === 'CANCELLED' && (
+                                                        <Badge variant="destructive" className="mt-1 text-[10px] h-5">ANULADA</Badge>
+                                                    )}
+                                                    {sale.status === 'CANCELLATION_REQUESTED' && (
+                                                        <Badge variant="outline" className="mt-1 text-[10px] h-5 text-yellow-500 border-yellow-500">SOLICITADA</Badge>
+                                                    )}
+                                                    {sale.cancellationReason && (
+                                                        <p className="text-[10px] text-muted-foreground mt-1 max-w-[150px] truncate" title={sale.cancellationReason}>
+                                                            Motivo: {sale.cancellationReason}
+                                                        </p>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
@@ -152,6 +202,43 @@ export function SalesHistoryPage() {
                                                     >
                                                         <Printer size={16} />
                                                     </Button>
+
+                                                    {/* Cancellation Actions */}
+                                                    {sale.status === 'COMPLETED' && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={() => handleCancelClick(sale.id)}
+                                                            title={currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN' ? "Anular Venta" : "Solicitar Anulación"}
+                                                        >
+                                                            <XCircle size={16} />
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Admin Approval Actions */}
+                                                    {sale.status === 'CANCELLATION_REQUESTED' && (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+                                                        <div className="flex gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
+                                                                onClick={() => handleApproveCancellation(sale.id)}
+                                                                title="Aprobar Anulación"
+                                                            >
+                                                                <CheckCircle2 size={16} />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                onClick={() => handleRejectCancellation(sale.id)}
+                                                                title="Rechazar Solicitud"
+                                                            >
+                                                                <XCircle size={16} />
+                                                            </Button>
+                                                        </div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );
@@ -162,6 +249,37 @@ export function SalesHistoryPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+                <DialogContent className="sm:max-w-[425px] bg-card border-white/10">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-destructive">
+                            <AlertTriangle size={20} />
+                            {currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN' ? 'Anular Venta' : 'Solicitar Anulación'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN'
+                                ? 'Esta acción revertirá el stock y marcará la venta como anulada. Esta acción es irreversible.'
+                                : 'Se enviará una solicitud al administrador para anular esta venta.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <label className="text-sm font-medium mb-2 block">Motivo de anulación:</label>
+                        <Textarea
+                            value={cancellationReason}
+                            onChange={(e) => setCancellationReason(e.target.value)}
+                            placeholder="Ej: Error en cobro, devolución de producto..."
+                            className="min-h-[100px]"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setCancelDialogOpen(false)} disabled={isProcessing}>Cancelar</Button>
+                        <Button variant="destructive" onClick={handleConfirmCancellation} disabled={isProcessing}>
+                            {isProcessing ? 'Procesando...' : (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN' ? 'Confirmar Anulación' : 'Enviar Solicitud')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
